@@ -1,103 +1,112 @@
-# Bplogger 설계 정리본
+# Pulse Log 설계 정리
 
 ## 1. 설계 요약
 
 기준 설계는 `날짜 단위 건강 기록` 모델이다.
-앱은 첫 진입 시 오늘 날짜를 기본 선택하고, 메인 화면에서 선택 날짜 기준으로 빠르게 입력하는 흐름을 우선한다.
+앱은 첫 진입 시 오늘 날짜를 기본 선택하고, 캘린더 탭 안에서 선택 날짜 기준으로 빠르게 입력하는 흐름을 우선한다.
 
-핵심 설계 원칙:
+## 2. 현재 화면 설계
 
-- 저장 단위는 날짜 단위다.
-- 아침 혈압과 저녁 혈압은 독립적으로 저장/수정/삭제된다.
-- 체중은 선택 입력이며 날짜 단위로 저장된다.
-- 메모는 별도 날짜 단위 리소스다.
-- 앱 첫 진입 시 오늘 날짜를 기본 선택한다.
-- 메인 화면은 빠른 입력 중심이다.
-- 상세 화면은 세부 수정/관리 중심이다.
+### 2.1 메인 진입
 
-## 2. 권장 화면 구조
-
-### 2.1 메인 화면
-
-- 탭 2개 구성
-  - 캘린더
-  - 그래프
-
-주요 상태:
-
-- 현재 보고 있는 연월
-- 선택 날짜
-- 해당 월 날짜 상태 요약
-- 선택 날짜 입력 상태
-
-기본 동작:
-
-- 첫 진입 시 오늘 날짜를 기본 선택한다.
-- 날짜 셀 탭의 1차 동작은 상세 진입이 아니라 입력 대상 날짜 변경이다.
-- 선택 날짜 기준 입력 카드가 캘린더보다 먼저 인식되어야 한다.
+- 상단 헤더
+- 커스텀 세그먼트 탭
+- 탭 전환 애니메이션
+- 결과 메시지는 스낵바
 
 ### 2.2 캘린더 탭
 
-역할:
+구성:
 
-- 월 단위 날짜 탐색
-- 날짜 상태 시각화
-- 선택 날짜 빠른 입력
-- 상세 관리 진입
-
-주요 UI 블록:
-
+- 월력 카드
 - 선택 날짜 요약
+- 메모 미리보기
+- 메모 별표가 포함된 날짜 셀
 - 빠른 입력 카드
-- 연월 헤더
-- 컴팩트 월력 그리드
-- 상태 인디케이터
-- 상세 관리 진입 액션
 
-상태 표현 기본 규칙:
+동작:
 
-- `NONE`: 중립색
-- `MORNING_ONLY`: 아침 강조색
-- `EVENING_ONLY`: 저녁 강조색
-- `BOTH`: 완료색
+- 첫 진입 시 오늘 날짜를 기본 선택한다.
+- 날짜 셀 탭의 1차 동작은 상세 진입이 아니라 입력 대상 날짜 변경이다.
+- 메인 입력 카드의 필드는 선택 날짜 저장값과 동기화된다.
+- 저장 버튼 누름 시 포커스를 해제하고 키보드를 내린다.
 
-추가 요구:
-
-- 색상만으로 상태를 구분하지 않는다.
-- 날짜 셀의 `contentDescription` 또는 별도 라벨로 상태를 함께 제공한다.
-- 캘린더는 개별 버튼 나열처럼 보이지 않도록 컴팩트한 월력 형태를 유지한다.
-
-### 2.3 일별 상세 화면
+### 2.3 상세 화면
 
 역할:
 
-- 선택 날짜의 아침 혈압 확인/수정/삭제
-- 선택 날짜의 저녁 혈압 확인/수정/삭제
-- 선택 날짜의 체중 확인/수정/삭제
+- 선택 날짜 아침 혈압 관리
+- 선택 날짜 저녁 혈압 관리
+- 선택 날짜 체중 관리
 - 날짜 메모 확인/수정/삭제
+- 측정 시간 확인
 
 성격:
 
 - 주 입력 화면이 아니라 세부 관리 화면
-- 메인 화면에서 해결되지 않는 수정/삭제/메모 작업 수행
 
 ### 2.4 그래프 탭
 
-- 최근 7일 기본 그래프 표시
-- 최근 7일/최근 30일 전환
-- 혈압 2라인 그래프 표시
-- 체중 그래프 표시
+- 최근 7일 / 최근 30일 전환
+- 혈압 2라인 그래프
+- 체중 그래프
+- 빈 상태 메시지 처리
 
-### 2.5 알림 설정 화면
+### 2.5 설정 탭
 
-- 아침 알림 시간 설정
-- 저녁 알림 시간 설정
-- 재알림 여부 설정
-- 재알림 횟수 설정
+- 아침 알림 on/off와 시간 입력
+- 저녁 알림 on/off와 시간 입력
+- 재알림 on/off와 횟수 입력
+- 빠른 입력 카드와 동일한 디자인 계열 재사용
 
-## 3. 권장 데이터 모델
+## 3. UI 구조 설계
 
-### 3.1 DailyHealthRecord
+현재 UI는 역할별 파일로 분리한다.
+
+- [BloodPressureScreen.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/BloodPressureScreen.kt)
+  - 헤더, 세그먼트 탭, 탭 콘텐츠 전환
+- [CalendarTab.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/CalendarTab.kt)
+  - 캘린더 탭 상태 조합
+- [CalendarComponents.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/CalendarComponents.kt)
+  - 월력 카드와 날짜 셀
+- [QuickEntryComponents.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/QuickEntryComponents.kt)
+  - 빠른 입력 카드와 공용 입력 컴포넌트
+- [GraphScreen.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/GraphScreen.kt)
+  - 그래프 화면
+- [SettingsScreen.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/SettingsScreen.kt)
+  - 설정 화면
+- [DayDetailScreen.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/DayDetailScreen.kt)
+  - 날짜별 상세 화면
+- [UiChrome.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/UiChrome.kt)
+  - 헤더, 포커스 해제 modifier
+- [UiTokens.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/UiTokens.kt)
+  - 색상 토큰, 포맷터, 상태 계산 헬퍼
+
+## 4. 현재 시각 설계 원칙
+
+- 전체 톤은 혈압 앱에 맞춘 밝은 핑크/적색 계열
+- 캘린더, 빠른 입력, 그래프, 설정은 같은 디자인 언어를 사용
+- 기본 Material 컴포넌트 느낌을 그대로 두지 않고, 카드/유리판/캡슐 구조로 조정
+- 메모 상태는 혈압 상태와 충돌하지 않도록 보조 마커로 표현
+
+## 5. 입력 설계
+
+- 아침/저녁 혈압은 각각 2필드 + 저장 버튼
+- 체중은 단일 필드 + 저장 버튼
+- 저장 버튼은 아이콘 기반 단일 액션
+- 저장 누름 전/직후 상태 차이를 애니메이션으로 표현
+- 빠른 입력에서는 측정 시간과 현재값 텍스트를 최소화하고 필드 중심으로 구성
+- 상세 화면에서는 측정 시간과 삭제까지 포함
+
+## 6. 피드백 설계
+
+- 저장/수정/삭제 결과는 스낵바로 표시
+- 바깥쪽 터치 시 포커스 해제 및 키보드 닫힘
+- 입력 화면 루트에는 `imePadding()`과 `animateContentSize()`를 적용
+
+## 7. 데이터 모델 설계
+
+### 7.1 DailyHealthRecord
 
 - `dateIso: String`
 - `morningSystolic: Int?`
@@ -119,14 +128,14 @@
 - 체중은 nullable
 - 수정 시 기존 측정 시간은 유지한다.
 
-### 3.2 DailyNote
+### 7.2 DailyNote
 
 - `dateIso: String`
 - `note: String`
 - `createdAtEpochMs: Long`
 - `updatedAtEpochMs: Long`
 
-### 3.3 NotificationSettings
+### 7.3 NotificationSettings
 
 - `id: Int`
 - `morningEnabled: Boolean`
@@ -137,25 +146,10 @@
 - `repeatCount: Int`
 - `updatedAtEpochMs: Long`
 
-## 4. 저장 정책
+## 8. 현재 설계상 남은 리스크
 
-- 선택 날짜에 기록이 없으면 신규 혈압/체중 저장 허용
-- 선택 날짜에 기록이 있으면 update 경로 사용
-- 메모는 과거/오늘/미래 모두 upsert 허용
-- 저장 시 측정 시간은 기기 현재 시각으로 자동 기록
-- 수정 시에는 기존 측정 시간을 유지한다
-- 앱 시작 시 선택 날짜는 항상 오늘 날짜로 초기화한다
-
-## 5. 조회 정책
-
-- 월 단위 날짜 상태 조회
-- 특정 날짜 상세 조회
-- 그래프용 기간 조회
-- 오늘 날짜 기본 선택 조회
-- 알림 설정 조회
-
-## 6. 설계 리스크
-
-- 빠른 입력 중심 UI와 컴팩트 캘린더 UI를 한 화면에서 균형 있게 배치해야 한다.
-- 상세 화면의 역할이 메인 화면과 다시 겹치지 않도록 구조를 분리해야 한다.
-- 캘린더 4상태 색상은 실제 브랜드 톤에 맞게 최종 디자인 치환이 필요하다.
+- 실제 알림 스케줄링은 아직 연결되지 않았다.
+- 설정 화면 시간 입력은 자유 텍스트라 형식 오류 가능성이 남아 있다.
+- 상세 화면 입력 스타일이 빠른 입력 대비 덜 정리되어 있다.
+- 현재 차트는 단순 캔버스 기반이라 확장성이 낮다.
+- DB는 destructive migration 상태라 운영 데이터 보존 전략이 필요하다.

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -142,9 +143,9 @@ private fun MainSegmentedTabs(
     ) {
         val tabCount = MainTab.entries.size
         val gap = 8.dp
-        val indicatorWidth = (maxWidth - gap * (tabCount - 1)) / tabCount
+        val indicatorWidth = ((maxWidth - gap * (tabCount - 1)) / tabCount).coerceAtLeast(0.dp)
         val indicatorOffset by animateDpAsState(
-            targetValue = (indicatorWidth + gap) * selectedTab.ordinal,
+            targetValue = ((indicatorWidth + gap) * selectedTab.ordinal).coerceAtLeast(0.dp),
             animationSpec = spring(
                 dampingRatio = 0.92f,
                 stiffness = Spring.StiffnessMediumLow
@@ -162,7 +163,7 @@ private fun MainSegmentedTabs(
 
         Box(
             modifier = Modifier
-                .padding(start = indicatorOffset)
+                .offset(x = indicatorOffset)
                 .width(indicatorWidth)
                 .shadow(
                     elevation = indicatorElevation,

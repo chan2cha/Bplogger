@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -221,9 +220,8 @@ private fun WeightQuickEntryRow(
                     label = "체중",
                     suffix = "kg",
                     keyboardType = KeyboardType.Decimal,
-                    modifier = Modifier.width(112.dp)
+                    modifier = Modifier.width(234.dp)
                 )
-                Spacer(modifier = Modifier.width(112.dp))
                 IconActionButton(
                     label = if (record?.weightKg == null) "체중 저장" else "체중 수정",
                     onClick = onSaveWeight
