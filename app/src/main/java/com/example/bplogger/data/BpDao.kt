@@ -2,17 +2,46 @@ package com.example.bplogger.data
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.Query
 import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BpDao {
 
-    // 날짜+slot이 unique → 같은 키면 REPLACE로 덮어쓰기
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(record: BpRecord)
+    @Query("SELECT * FROM daily_health_records ORDER BY dateIso ASC")
+    fun observeAllRecords(): Flow<List<DailyHealthRecord>>
 
-    @Query("SELECT * FROM bp_records WHERE dateIso = :dateIso ORDER BY slot ASC")
-    fun observeByDate(dateIso: String): Flow<List<BpRecord>>
+    @Query("SELECT * FROM daily_health_records WHERE dateIso = :dateIso")
+    fun observeRecord(dateIso: String): Flow<DailyHealthRecord?>
+
+    @Query("SELECT * FROM daily_health_records WHERE dateIso = :dateIso")
+    suspend fun getRecord(dateIso: String): DailyHealthRecord?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertRecord(record: DailyHealthRecord)
+
+    @Query("DELETE FROM daily_health_records WHERE dateIso = :dateIso")
+    suspend fun deleteRecord(dateIso: String)
+
+    @Query("SELECT * FROM daily_notes ORDER BY dateIso ASC")
+    fun observeAllNotes(): Flow<List<DailyNote>>
+
+    @Query("SELECT * FROM daily_notes WHERE dateIso = :dateIso")
+    fun observeNote(dateIso: String): Flow<DailyNote?>
+
+    @Query("SELECT * FROM daily_notes WHERE dateIso = :dateIso")
+    suspend fun getNote(dateIso: String): DailyNote?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertNote(note: DailyNote)
+
+    @Query("DELETE FROM daily_notes WHERE dateIso = :dateIso")
+    suspend fun deleteNote(dateIso: String)
+
+    @Query("SELECT * FROM notification_settings WHERE id = 1")
+    fun observeSettings(): Flow<NotificationSettings?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSettings(settings: NotificationSettings)
 }

@@ -4,8 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [BpRecord::class],
-    version = 2,
+    entities = [DailyHealthRecord::class, DailyNote::class, NotificationSettings::class],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

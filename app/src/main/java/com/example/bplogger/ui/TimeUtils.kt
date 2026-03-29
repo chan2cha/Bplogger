@@ -1,15 +1,8 @@
 package com.example.bplogger.ui
 
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.YearMonth
 
-data class DateSlot(
-    val dateIso: String,
-    val slot: String // "AM" or "PM"
-)
+fun todayIso(): String = LocalDate.now().toString()
 
-fun deriveDateSlotFromDeviceTime(): DateSlot {
-    val dateIso = LocalDate.now().toString()
-    val slot = if (LocalTime.now().hour < 12) "AM" else "PM"
-    return DateSlot(dateIso, slot)
-}
+fun currentYearMonth(): YearMonth = YearMonth.now()

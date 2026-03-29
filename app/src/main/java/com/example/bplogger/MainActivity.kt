@@ -12,7 +12,6 @@ import com.example.bplogger.ui.BpViewModel
 
 class MainActivity : ComponentActivity() {
 
-    // Activity 생명주기 동안 유지 (화면 회전 시 재생성은 되지만 MVP에선 OK)
     private lateinit var vm: BpViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
