@@ -3,110 +3,170 @@
 ## 1. 설계 요약
 
 기준 설계는 `날짜 단위 건강 기록` 모델이다.
-앱은 첫 진입 시 오늘 날짜를 기본 선택하고, 캘린더 탭 안에서 선택 날짜 기준으로 빠르게 입력하는 흐름을 우선한다.
+앱은 첫 진입 시 오늘 날짜를 기본 선택하고, 입력 탭에서 선택 날짜 기준으로 빠르게 입력하는 흐름을 우선한다.
+
+별도 상세 화면과 날짜 메모는 현재 활성 사용자 흐름에서 제외한다.
+기존 DB와 일부 코드는 마이그레이션 리스크를 줄이기 위해 보존한다.
 
 ## 2. 현재 화면 설계
 
 ### 2.1 메인 진입
 
 - 상단 헤더
+- 헤더 우측 내보내기 아이콘과 설정 톱니바퀴
 - 커스텀 세그먼트 탭
 - 탭 전환 애니메이션
 - 결과 메시지는 스낵바
 
-### 2.2 캘린더 탭
+### 2.2 입력 탭
+
+구성:
+
+- 선택 날짜 기준 빠른 입력 카드
+- 저장/삭제 액션
+- 삭제 확인 다이얼로그
+
+동작:
+
+- 선택 날짜는 캘린더/그래프와 공유한다.
+- 입력 카드의 필드는 선택 날짜 저장값과 동기화된다.
+- 저장 버튼 누름 시 포커스를 해제하고 키보드를 내린다.
+- 삭제 버튼은 저장된 항목이 있을 때만 표시한다.
+- 삭제는 확인 다이얼로그에서 확정한 뒤 실행한다.
+
+### 2.3 캘린더 탭
 
 구성:
 
 - 월력 카드
-- 선택 날짜 요약
-- 메모 미리보기
-- 메모 별표가 포함된 날짜 셀
-- 빠른 입력 카드
+- 월력 카드 상단 선택 날짜 요약
+- 선택 날짜 기록 요약
+- 입력 탭 이동 액션
 
 동작:
 
 - 첫 진입 시 오늘 날짜를 기본 선택한다.
-- 날짜 셀 탭의 1차 동작은 상세 진입이 아니라 입력 대상 날짜 변경이다.
-- 메인 입력 카드의 필드는 선택 날짜 저장값과 동기화된다.
-- 저장 버튼 누름 시 포커스를 해제하고 키보드를 내린다.
-
-### 2.3 상세 화면
-
-역할:
-
-- 선택 날짜 아침 혈압 관리
-- 선택 날짜 저녁 혈압 관리
-- 선택 날짜 체중 관리
-- 날짜 메모 확인/수정/삭제
-- 측정 시간 확인
-
-성격:
-
-- 주 입력 화면이 아니라 세부 관리 화면
+- 날짜 셀 탭의 1차 동작은 입력 대상 날짜 변경이다.
+- 날짜 선택 시 월력 카드 상단 요약이 즉시 변경된다.
 
 ### 2.4 그래프 탭
 
 - 최근 7일 / 최근 30일 전환
 - 혈압 2라인 그래프
 - 체중 그래프
-- 빈 상태 메시지 처리
+- x축/y축 라벨
+- 범례
+- 포인트 표시
+- 날짜 열 선택
+- 선택 날짜 카드
+- 혈압 기준선
+- 중간 미기록 날짜 연결 점선
+- 선택 날짜를 캘린더 탭으로 이동하는 액션
+- 빈 상태 메시지
 
-### 2.5 설정 탭
+### 2.5 설정 화면
 
+- 헤더 우측 톱니바퀴에서 진입
 - 아침 알림 on/off와 시간 입력
 - 저녁 알림 on/off와 시간 입력
 - 재알림 on/off와 횟수 입력
 - 빠른 입력 카드와 동일한 디자인 계열 재사용
+- 디버그 빌드에서 그래프 테스트 데이터 생성 액션
+
+### 2.6 내보내기 화면
+
+- 헤더 우측 공유 아이콘에서 진입
+- 최근 30일 / 전체 기록 CSV 내보내기
+- 최근 30일 / 전체 기록 PDF 요약본 내보내기
+- PDF 요약본에 혈압/체중 최근 추이 그래프 포함
+- Android 공유 시트로 이메일, 메신저, 드라이브 앱에 전달
 
 ## 3. UI 구조 설계
 
 현재 UI는 역할별 파일로 분리한다.
 
-- [BloodPressureScreen.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/BloodPressureScreen.kt)
-  - 헤더, 세그먼트 탭, 탭 콘텐츠 전환
-- [CalendarTab.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/CalendarTab.kt)
+- `BloodPressureScreen.kt`
+  - 헤더, 내보내기/설정 진입, 세그먼트 탭, 탭 콘텐츠 전환
+- `EntryScreen.kt`
+  - 선택 날짜 기준 빠른 입력 화면
+- `CalendarTab.kt`
   - 캘린더 탭 상태 조합
-- [CalendarComponents.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/CalendarComponents.kt)
-  - 월력 카드와 날짜 셀
-- [QuickEntryComponents.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/QuickEntryComponents.kt)
-  - 빠른 입력 카드와 공용 입력 컴포넌트
-- [GraphScreen.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/GraphScreen.kt)
-  - 그래프 화면
-- [SettingsScreen.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/SettingsScreen.kt)
-  - 설정 화면
-- [DayDetailScreen.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/DayDetailScreen.kt)
-  - 날짜별 상세 화면
-- [UiChrome.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/UiChrome.kt)
-  - 헤더, 포커스 해제 modifier
-- [UiTokens.kt](/Users/chan/workspace/projects/Bplogger/app/src/main/java/com/example/bplogger/ui/UiTokens.kt)
+- `CalendarComponents.kt`
+  - 월력 카드, 선택 날짜 요약, 날짜 셀
+- `QuickEntryComponents.kt`
+  - 빠른 입력 카드, 공용 입력 컴포넌트, 삭제 확인 다이얼로그
+- `GraphScreen.kt`
+  - 그래프 화면, Canvas 차트, 선택 날짜 카드
+- `SettingsScreen.kt`
+  - 헤더 톱니바퀴에서 열리는 설정 화면, 알림 설정, 디버그 테스트 데이터 액션
+- `ExportScreen.kt`
+  - 헤더 공유 아이콘에서 열리는 CSV/PDF 요약본 내보내기 화면
+- `DayDetailScreen.kt`
+  - 현재 활성 사용자 흐름에서는 사용하지 않음
+- `UiChrome.kt`
+  - 헤더, 포커스 해제 modifier, 회색 ripple 없는 soft clickable
+- `PulseLogTheme.kt`
+  - 앱 컬러 스킴과 Material ripple 톤 통일
+- `UiTokens.kt`
   - 색상 토큰, 포맷터, 상태 계산 헬퍼
+- `domain/GraphPolicy.kt`
+  - 그래프 날짜축과 값 범위 정책
+- `domain/ExportPolicy.kt`
+  - CSV 파일명, 헤더, 행 포맷, PDF 요약 데이터 정책
+- `domain/ClockProvider.kt`
+  - 날짜/시간 의존성 경계
 
 ## 4. 현재 시각 설계 원칙
 
 - 전체 톤은 혈압 앱에 맞춘 밝은 핑크/적색 계열
 - 캘린더, 빠른 입력, 그래프, 설정은 같은 디자인 언어를 사용
-- 기본 Material 컴포넌트 느낌을 그대로 두지 않고, 카드/유리판/캡슐 구조로 조정
-- 메모 상태는 혈압 상태와 충돌하지 않도록 보조 마커로 표현
+- 그래프 라인 색상은 수축기, 이완기, 체중을 명확히 구분한다.
+- 기본 Material 컴포넌트 느낌을 그대로 두지 않고 카드/유리판/캡슐 구조로 조정한다.
 
 ## 5. 입력 설계
 
 - 아침/저녁 혈압은 각각 2필드 + 저장 버튼
 - 체중은 단일 필드 + 저장 버튼
+- 저장된 항목에는 삭제 버튼을 함께 제공
 - 저장 버튼은 아이콘 기반 단일 액션
+- 삭제 버튼도 아이콘 기반이며 확인 다이얼로그를 거친다.
 - 저장 누름 전/직후 상태 차이를 애니메이션으로 표현
-- 빠른 입력에서는 측정 시간과 현재값 텍스트를 최소화하고 필드 중심으로 구성
-- 상세 화면에서는 측정 시간과 삭제까지 포함
+- 빠른 입력에서는 필드 중심으로 현재값 확인과 수정을 수행한다.
 
-## 6. 피드백 설계
+## 6. 그래프 설계
+
+- 그래프 기간은 최근 7일 또는 최근 30일이다.
+- 기록이 없는 날짜도 날짜축에는 포함한다.
+- 연속 기록 구간은 실선으로 표시한다.
+- 중간 미기록 날짜를 건너는 연결 구간은 연한 점선으로 표시한다.
+- 혈압 그래프는 수축기/이완기 일 평균 2라인이다.
+- 아침/저녁 분리 그래프는 현재 범위에서 제외한다.
+- 혈압 그래프에는 수축기 120, 이완기 80 기준선을 표시한다.
+- 사용자가 그래프를 탭하면 가장 가까운 날짜 열을 선택한다.
+- 선택 날짜 카드는 날짜, 값 목록, 캘린더 이동 액션을 함께 보여준다.
+
+## 7. 피드백 설계
 
 - 저장/수정/삭제 결과는 스낵바로 표시
+- CSV/PDF 공유는 Android Sharesheet로 처리한다.
 - 바깥쪽 터치 시 포커스 해제 및 키보드 닫힘
-- 입력 화면 루트에는 `imePadding()`과 `animateContentSize()`를 적용
+- 입력 화면 루트에는 `imePadding()`과 `animateContentSize()` 적용
+- 그래프 선택은 점선 세로 가이드라인과 포인트 강조로 표시
+- 기본 Material ripple은 앱 포인트 컬러 기반으로 통일한다.
 
-## 7. 데이터 모델 설계
+## 8. 내보내기 설계
 
-### 7.1 DailyHealthRecord
+- 헤더 공유 아이콘에서 내보내기 화면을 열고 최근 30일 또는 전체 기록 CSV/PDF 요약본을 공유한다.
+- CSV 생성과 PDF 요약 데이터 계산은 `ExportPolicy`가 담당한다.
+- 파일은 `cacheDir/exports`에 임시 생성한다.
+- 공유는 `FileProvider` URI와 `ACTION_SEND` intent로 처리한다.
+- 한글 환경 엑셀 호환성을 위해 UTF-8 BOM을 포함한다.
+- 빈 측정값은 빈 칸으로 둬서 실제 `0` 측정값으로 오해하지 않게 한다.
+- PDF 요약본은 기록 기간, 기록 건수, 평균 혈압/체중, 최근 추이 그래프, 최근 기록 표를 포함한다.
+
+## 9. 데이터 모델 설계
+
+### 9.1 DailyHealthRecord
 
 - `dateIso: String`
 - `morningSystolic: Int?`
@@ -128,14 +188,13 @@
 - 체중은 nullable
 - 수정 시 기존 측정 시간은 유지한다.
 
-### 7.2 DailyNote
+### 9.2 DailyNote
 
-- `dateIso: String`
-- `note: String`
-- `createdAtEpochMs: Long`
-- `updatedAtEpochMs: Long`
+- 현재 UI에서는 사용하지 않는다.
+- 기존 DB 스키마와 마이그레이션 리스크 때문에 일단 보존한다.
+- 최종 제거는 Room migration 전략과 함께 결정한다.
 
-### 7.3 NotificationSettings
+### 9.3 NotificationSettings
 
 - `id: Int`
 - `morningEnabled: Boolean`
@@ -146,10 +205,9 @@
 - `repeatCount: Int`
 - `updatedAtEpochMs: Long`
 
-## 8. 현재 설계상 남은 리스크
+## 10. 현재 설계상 남은 리스크
 
 - 실제 알림 스케줄링은 아직 연결되지 않았다.
 - 설정 화면 시간 입력은 자유 텍스트라 형식 오류 가능성이 남아 있다.
-- 상세 화면 입력 스타일이 빠른 입력 대비 덜 정리되어 있다.
-- 현재 차트는 단순 캔버스 기반이라 확장성이 낮다.
 - DB는 destructive migration 상태라 운영 데이터 보존 전략이 필요하다.
+- 미사용 상세/메모 코드 제거는 마이그레이션 전략 이후 처리해야 한다.
