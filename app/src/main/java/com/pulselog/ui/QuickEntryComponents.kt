@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
@@ -244,22 +243,15 @@ private fun QuickEntrySection(
                     onValueChange = onPrimaryChange,
                     label = primaryLabel.take(1),
                     keyboardType = KeyboardType.Number,
-                    modifier = Modifier.width(112.dp)
+                    modifier = Modifier.weight(1f)
                 )
                 PremiumInputField(
                     value = secondaryValue,
                     onValueChange = onSecondaryChange,
                     label = secondaryLabel.take(1),
                     keyboardType = KeyboardType.Number,
-                    modifier = Modifier.width(112.dp)
+                    modifier = Modifier.weight(1f)
                 )
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(modifier = Modifier.weight(1f))
                 IconActionButton(
                     label = saveLabel,
                     onClick = onSave
@@ -313,13 +305,6 @@ private fun WeightQuickEntryRow(
                     keyboardType = KeyboardType.Decimal,
                     modifier = Modifier.weight(1f)
                 )
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(modifier = Modifier.weight(1f))
                 IconActionButton(
                     label = if (record?.weightKg == null) "체중 저장" else "체중 수정",
                     onClick = onSaveWeight
