@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -56,6 +57,7 @@ internal fun GraphScreen(
 ) {
     val rangeDays by vm.graphRangeDays.collectAsState()
     val points by vm.graphPoints.collectAsState()
+    val compactText = isCompactTextMode()
 
     val systolicSeries = points.map { averageOfNotNull(it.morningSystolic, it.eveningSystolic) }
     val diastolicSeries = points.map { averageOfNotNull(it.morningDiastolic, it.eveningDiastolic) }
@@ -84,20 +86,22 @@ internal fun GraphScreen(
                             fontWeight = FontWeight.Bold,
                             color = PremiumInk
                         )
-                        Text(
-                            text = "선택 기간의 혈압과 체중 변화를 확인합니다.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = PremiumSubtle
-                        )
+                        if (!compactText) {
+                            Text(
+                                text = "선택 기간의 혈압과 체중 변화를 확인합니다.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = PremiumSubtle
+                            )
+                        }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         RangeChip(
-                            label = "최근 7일",
+                            label = if (compactText) "7일" else "최근 7일",
                             selected = rangeDays == 7,
                             onClick = { vm.setGraphRangeDays(7) }
                         )
                         RangeChip(
-                            label = "최근 30일",
+                            label = if (compactText) "30일" else "최근 30일",
                             selected = rangeDays == 30,
                             onClick = { vm.setGraphRangeDays(30) }
                         )
@@ -116,8 +120,8 @@ internal fun GraphScreen(
                 } else {
                     ChartLegend(
                         items = listOf(
-                            LegendEntry("수축기", SystolicChartColor),
-                            LegendEntry("이완기", DiastolicChartColor)
+                            LegendEntry(if (compactText) "수" else "수축기", SystolicChartColor),
+                            LegendEntry(if (compactText) "이" else "이완기", DiastolicChartColor)
                         )
                     )
                     ChartGapHint(series = listOf(systolicSeries, diastolicSeries))
@@ -128,8 +132,8 @@ internal fun GraphScreen(
                         seriesLabels = listOf("수축기", "이완기"),
                         colors = listOf(SystolicChartColor, DiastolicChartColor),
                         referenceLines = listOf(
-                            ChartReferenceLine("수축기 120", 120.0, SystolicChartColor),
-                            ChartReferenceLine("이완기 80", 80.0, DiastolicChartColor)
+                            ChartReferenceLine(if (compactText) "수 120" else "수축기 120", 120.0, SystolicChartColor),
+                            ChartReferenceLine(if (compactText) "이 80" else "이완기 80", 80.0, DiastolicChartColor)
                         ),
                         onOpenCalendar = { dateIso ->
                             openCalendarForGraphDate(
@@ -215,9 +219,10 @@ private fun openCalendarForGraphDate(
 @Composable
 private fun ChartGapHint(series: List<List<Double?>>) {
     if (!hasMissingSeriesGap(series)) return
+    val compactText = isCompactTextMode()
 
     Text(
-        text = "점선은 미기록 날짜를 건너 연결한 구간입니다.",
+        text = if (compactText) "점선은 미기록 구간입니다." else "점선은 미기록 날짜를 건너 연결한 구간입니다.",
         style = MaterialTheme.typography.labelSmall,
         color = PremiumSubtle
     )
@@ -228,13 +233,17 @@ private fun ChartGapHint(series: List<List<Double?>>) {
  */
 @Composable
 private fun ChartCard(title: String, subtitle: String, content: @Composable () -> Unit) {
+    val compactText = isCompactTextMode()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = CardTint)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = WarmAccent)
-            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = PremiumSubtle)
+            if (!compactText) {
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = PremiumSubtle)
+            }
             content()
         }
     }
@@ -273,6 +282,8 @@ private fun RangeChip(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val compactText = isCompactTextMode()
+
     Box(
         modifier = Modifier
             .background(
@@ -285,7 +296,8 @@ private fun RangeChip(
                 shape = RoundedCornerShape(18.dp)
             )
             .softClickable(RoundedCornerShape(18.dp), onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .defaultMinSize(minHeight = 42.dp)
+            .padding(horizontal = if (compactText) 12.dp else 14.dp, vertical = if (compactText) 8.dp else 10.dp)
             ,
         contentAlignment = androidx.compose.ui.Alignment.Center
     ) {
@@ -541,13 +553,15 @@ private fun ChartSelectionSummary(
     valueSuffix: String,
     onOpenCalendar: (String) -> Unit
 ) {
+    val compactText = isCompactTextMode()
+
     if (selectedColumn == null) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = PremiumGlass)
         ) {
             Text(
-                text = "그래프를 탭해 날짜별 값을 확인하세요.",
+                text = if (compactText) "탭해 값 확인" else "그래프를 탭해 날짜별 값을 확인하세요.",
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = PremiumSubtle
@@ -570,12 +584,14 @@ private fun ChartSelectionSummary(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = "선택 날짜",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = PremiumSubtle,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    if (!compactText) {
+                        Text(
+                            text = "선택 날짜",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = PremiumSubtle,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                     Text(
                         text = selectedColumn.label,
                         style = MaterialTheme.typography.titleSmall,
@@ -585,7 +601,7 @@ private fun ChartSelectionSummary(
                 }
                 if (selectedColumn.entries.isNotEmpty()) {
                     TextButton(onClick = { onOpenCalendar(selectedColumn.dateIso) }) {
-                        Text("캘린더에서 보기")
+                        Text(if (compactText) "보기" else "캘린더에서 보기")
                     }
                 }
             }
@@ -597,31 +613,48 @@ private fun ChartSelectionSummary(
                     color = PremiumSubtle
                 )
             } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
+                val entriesContent: @Composable () -> Unit = {
                     selectedColumn.entries.forEach { entry ->
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(entry.color, RoundedCornerShape(99.dp))
-                            )
-                            Text(
-                                text = "${entry.seriesLabel} ${formatAxisValue(entry.value)}$valueSuffix",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = PremiumInk,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
+                        ChartSelectedEntryRow(entry = entry, valueSuffix = valueSuffix)
+                    }
+                }
+                if (compactText) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        entriesContent()
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        entriesContent()
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChartSelectedEntryRow(
+    entry: SelectedChartEntry,
+    valueSuffix: String
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(entry.color, RoundedCornerShape(99.dp))
+        )
+        Text(
+            text = "${entry.seriesLabel} ${formatAxisValue(entry.value)}$valueSuffix",
+            style = MaterialTheme.typography.bodySmall,
+            color = PremiumInk,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 

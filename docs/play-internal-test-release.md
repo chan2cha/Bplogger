@@ -11,6 +11,8 @@ Google Play Console 내부 테스트 트랙으로 Pulse Log를 제한된 테스�
 - release 서명 설정: `keystore.properties`가 있으면 `bundleRelease`에 자동 적용
 - 업로드 산출물: `app/build/outputs/bundle/release/app-release.aab`
 - 개인정보처리방침 문서: `docs/privacy-policy.md`
+- Play Store 앱 아이콘: `docs/store-assets/play-store-icon-512.png`
+- Play Store Feature Graphic: `docs/store-assets/play-feature-graphic-1024x500.png`
 
 주의:
 
@@ -80,7 +82,18 @@ app/build/outputs/bundle/release/app-release.aab
 - 첫 앱은 내부 테스터에게 빠르게 제공될 수 있지만, 임시 이름/스토어 정보가 최대 48시간 보일 수 있다.
 - 테스터는 Google 계정 이메일로 등록되어야 한다.
 
-## 6. 다음 릴리즈 규칙
+## 6. Play Console 입력 가이드
+
+- 대상 연령대: 18세 이상
+- 어린이 대상 앱 여부: 아니오
+- 광고 포함 여부: 아니오
+- 광고 ID 사용 여부: 아니오
+- 데이터 수집/공유: 개발자 서버 수집 없음. 혈압/체중은 기기 로컬에 저장되며 사용자가 직접 CSV/PDF 내보내기를 선택한 경우에만 외부 앱으로 전달됨
+- 카테고리: Health & Fitness
+- 추천 태그: Blood pressure, Health tracker, Medical records
+- 간단한 설명: `혈압과 체중을 날짜별로 기록하고, 그래프와 PDF 요약본으로 확인하세요.`
+
+## 7. 다음 릴리즈 규칙
 
 - Play에 이미 업로드한 뒤에는 `versionCode`를 반드시 증가시킨다.
 - `versionName`은 사용자가 볼 버전 문자열이다.

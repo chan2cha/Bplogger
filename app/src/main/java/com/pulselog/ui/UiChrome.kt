@@ -44,17 +44,19 @@ internal fun Header(
     onSettingsClick: () -> Unit,
     settingsActive: Boolean
 ) {
+    val compactText = isCompactTextMode()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = if (compactText) 14.dp else 20.dp, vertical = if (compactText) 10.dp else 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compactText) 8.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = Icons.Outlined.Favorite,
             contentDescription = null,
-            modifier = Modifier.size(26.dp),
+            modifier = Modifier.size(if (compactText) 22.dp else 26.dp),
             tint = WarmAccent
         )
         Column(
@@ -62,22 +64,24 @@ internal fun Header(
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium,
+                text = if (compactText) "Pulse" else title,
+                style = if (compactText) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = PremiumInk
             )
-            Text(
-                text = "Daily blood pressure tracker",
-                style = MaterialTheme.typography.labelMedium,
-                color = PremiumSubtle
-            )
+            if (!compactText) {
+                Text(
+                    text = "Daily blood pressure tracker",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = PremiumSubtle
+                )
+            }
         }
         IconButton(onClick = onExportClick) {
             Icon(
                 imageVector = if (exportActive) Icons.Outlined.Close else Icons.Outlined.IosShare,
                 contentDescription = if (exportActive) "내보내기 닫기" else "내보내기 열기",
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(if (compactText) 22.dp else 24.dp),
                 tint = if (exportActive) WarmAccent else PremiumSubtle
             )
         }
@@ -85,7 +89,7 @@ internal fun Header(
             Icon(
                 imageVector = if (settingsActive) Icons.Outlined.Close else Icons.Outlined.Settings,
                 contentDescription = if (settingsActive) "설정 닫기" else "설정 열기",
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(if (compactText) 22.dp else 24.dp),
                 tint = if (settingsActive) WarmAccent else PremiumSubtle
             )
         }

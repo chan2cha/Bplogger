@@ -12,9 +12,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -48,6 +48,7 @@ internal fun ExportScreen(
     onClose: () -> Unit
 ) {
     val context = LocalContext.current
+    val compactText = isCompactTextMode()
 
     Column(
         modifier = Modifier
@@ -66,18 +67,20 @@ internal fun ExportScreen(
                     SectionBadge(label = "EXPORT")
                     Text(
                         "데이터 내보내기",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = if (compactText) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = PremiumInk
                     )
-                    Text(
-                        "혈압과 체중 기록을 CSV 원본 파일 또는 병원 제출용 PDF 요약본으로 공유합니다.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = PremiumSubtle
-                    )
+                    if (!compactText) {
+                        Text(
+                            "혈압과 체중 기록을 CSV 원본 파일 또는 병원 제출용 PDF 요약본으로 공유합니다.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = PremiumSubtle
+                        )
+                    }
                 }
                 Text(
-                    "CSV 원본 데이터",
+                    if (compactText) "CSV" else "CSV 원본 데이터",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = PremiumInk
@@ -95,7 +98,7 @@ internal fun ExportScreen(
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = WarmAccent)
                     ) {
-                        Text("최근 30일")
+                        Text(if (compactText) "30일" else "최근 30일")
                     }
                     Button(
                         onClick = {
@@ -110,7 +113,7 @@ internal fun ExportScreen(
                     }
                 }
                 Text(
-                    "PDF 요약본",
+                    if (compactText) "PDF" else "PDF 요약본",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = PremiumInk
@@ -128,7 +131,7 @@ internal fun ExportScreen(
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = WarmAccent)
                     ) {
-                        Text("최근 30일")
+                        Text(if (compactText) "30일" else "최근 30일")
                     }
                     Button(
                         onClick = {
@@ -160,10 +163,10 @@ internal fun ExportScreen(
                     onClick = onClose,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .defaultMinSize(minHeight = 48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = WarmAccent)
                 ) {
-                    Text("메인으로")
+                    Text(if (compactText) "닫기" else "메인으로")
                 }
             }
         }

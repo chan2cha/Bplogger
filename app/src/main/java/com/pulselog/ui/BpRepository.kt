@@ -4,14 +4,15 @@ import com.pulselog.data.BpDao
 import com.pulselog.data.CalendarDayStatus
 import com.pulselog.data.DailyHealthRecord
 import com.pulselog.data.DailyNote
-import com.pulselog.data.DayRecordStatus
 import com.pulselog.data.GraphPoint
 import com.pulselog.data.NotificationSettings
+import com.pulselog.domain.CalendarPolicy
 import com.pulselog.domain.ClockProvider
 import com.pulselog.domain.ExportPolicy
 import com.pulselog.domain.ExportRange
 import com.pulselog.domain.ExportSummary
 import com.pulselog.domain.GraphPolicy
+import com.pulselog.domain.HealthRepository
 import com.pulselog.domain.SystemClockProvider
 import java.time.LocalDate
 import java.time.YearMonth
@@ -22,34 +23,23 @@ import kotlinx.coroutines.flow.map
 class BpRepository(
     private val dao: BpDao,
     private val clockProvider: ClockProvider = SystemClockProvider()
-) {
+) : HealthRepository {
 
-    fun observeRecord(date: LocalDate): Flow<DailyHealthRecord?> = dao.observeRecord(date.toString())
+    override fun observeRecord(date: LocalDate): Flow<DailyHealthRecord?> = dao.observeRecord(date.toString())
 
-    fun observeNote(date: LocalDate): Flow<DailyNote?> = dao.observeNote(date.toString())
+    override fun observeNote(date: LocalDate): Flow<DailyNote?> = dao.observeNote(date.toString())
 
-    fun observeMonthStatuses(month: YearMonth): Flow<List<CalendarDayStatus>> {
+    override fun observeMonthStatuses(month: YearMonth): Flow<List<CalendarDayStatus>> {
         return combine(dao.observeAllRecords(), dao.observeAllNotes()) { records, notes ->
-            val recordMap = records.associateBy { it.dateIso }
-            val noteSet = notes.filter { it.note.isNotBlank() }.mapTo(hashSetOf()) { it.dateIso }
-
-            (1..month.lengthOfMonth()).map { day ->
-                val date = month.atDay(day).toString()
-                val record = recordMap[date]
-                val status = record?.status() ?: DayRecordStatus.NONE
-                CalendarDayStatus(
-                    dateIso = date,
-                    hasMorningRecord = record?.morningSystolic != null,
-                    hasEveningRecord = record?.eveningSystolic != null,
-                    hasWeight = record?.weightKg != null,
-                    hasNote = noteSet.contains(date),
-                    status = status
-                )
-            }
+            CalendarPolicy.buildMonthStatuses(
+                month = month,
+                records = records,
+                notes = notes
+            )
         }
     }
 
-    fun observeGraphPoints(days: Int): Flow<List<GraphPoint>> {
+    override fun observeGraphPoints(days: Int): Flow<List<GraphPoint>> {
         return dao.observeAllRecords().map { records ->
             GraphPolicy.buildGraphPoints(
                 records = records,
@@ -59,24 +49,24 @@ class BpRepository(
         }
     }
 
-    fun observeNotificationSettings(): Flow<NotificationSettings> {
+    override fun observeNotificationSettings(): Flow<NotificationSettings> {
         return dao.observeSettings().map { it ?: NotificationSettings() }
     }
 
-    suspend fun exportCsv(range: ExportRange): Pair<String, String> {
+    override suspend fun exportCsv(range: ExportRange): Pair<String, String> {
         val today = clockProvider.today()
         val records = getExportRecords(range, today)
         return ExportPolicy.fileName(range = range, todayIso = today.toString()) to ExportPolicy.toCsv(records)
     }
 
-    suspend fun exportSummary(range: ExportRange): Pair<String, ExportSummary> {
+    override suspend fun exportSummary(range: ExportRange): Pair<String, ExportSummary> {
         val today = clockProvider.today()
         val records = getExportRecords(range, today)
         return ExportPolicy.pdfFileName(range = range, todayIso = today.toString()) to
             ExportPolicy.buildSummary(range = range, records = records, todayIso = today.toString())
     }
 
-    suspend fun saveMorning(date: LocalDate, systolic: Int, diastolic: Int) {
+    override suspend fun saveMorning(date: LocalDate, systolic: Int, diastolic: Int) {
         upsertRecord(date) { existing, now ->
             val base = existing ?: DailyHealthRecord(
                 dateIso = date.toString(),
@@ -92,7 +82,7 @@ class BpRepository(
         }
     }
 
-    suspend fun saveEvening(date: LocalDate, systolic: Int, diastolic: Int) {
+    override suspend fun saveEvening(date: LocalDate, systolic: Int, diastolic: Int) {
         upsertRecord(date) { existing, now ->
             val base = existing ?: DailyHealthRecord(
                 dateIso = date.toString(),
@@ -108,7 +98,7 @@ class BpRepository(
         }
     }
 
-    suspend fun saveWeight(date: LocalDate, weightKg: Double) {
+    override suspend fun saveWeight(date: LocalDate, weightKg: Double) {
         upsertRecord(date) { existing, now ->
             val base = existing ?: DailyHealthRecord(
                 dateIso = date.toString(),
@@ -123,49 +113,49 @@ class BpRepository(
         }
     }
 
-    suspend fun deleteMorning(date: LocalDate) {
+    override suspend fun deleteMorning(date: LocalDate) {
         val current = dao.getRecord(date.toString()) ?: return
         persistOrDelete(
             current.copy(
                 morningSystolic = null,
                 morningDiastolic = null,
                 morningMeasuredAtEpochMs = null,
-                updatedAtEpochMs = System.currentTimeMillis()
+                updatedAtEpochMs = clockProvider.nowEpochMs()
             )
         )
     }
 
-    suspend fun deleteEvening(date: LocalDate) {
+    override suspend fun deleteEvening(date: LocalDate) {
         val current = dao.getRecord(date.toString()) ?: return
         persistOrDelete(
             current.copy(
                 eveningSystolic = null,
                 eveningDiastolic = null,
                 eveningMeasuredAtEpochMs = null,
-                updatedAtEpochMs = System.currentTimeMillis()
+                updatedAtEpochMs = clockProvider.nowEpochMs()
             )
         )
     }
 
-    suspend fun deleteWeight(date: LocalDate) {
+    override suspend fun deleteWeight(date: LocalDate) {
         val current = dao.getRecord(date.toString()) ?: return
         persistOrDelete(
             current.copy(
                 weightKg = null,
                 weightMeasuredAtEpochMs = null,
-                updatedAtEpochMs = System.currentTimeMillis()
+                updatedAtEpochMs = clockProvider.nowEpochMs()
             )
         )
     }
 
-    suspend fun saveNote(date: LocalDate, note: String) {
+    override suspend fun saveNote(date: LocalDate, note: String) {
         val trimmed = note.trim()
         if (trimmed.isBlank()) {
             dao.deleteNote(date.toString())
             return
         }
 
-        val now = System.currentTimeMillis()
+        val now = clockProvider.nowEpochMs()
         val existing = dao.getNote(date.toString())
         dao.upsertNote(
             DailyNote(
@@ -177,15 +167,15 @@ class BpRepository(
         )
     }
 
-    suspend fun deleteNote(date: LocalDate) {
+    override suspend fun deleteNote(date: LocalDate) {
         dao.deleteNote(date.toString())
     }
 
-    suspend fun saveNotificationSettings(settings: NotificationSettings) {
-        dao.upsertSettings(settings.copy(updatedAtEpochMs = System.currentTimeMillis()))
+    override suspend fun saveNotificationSettings(settings: NotificationSettings) {
+        dao.upsertSettings(settings.copy(updatedAtEpochMs = clockProvider.nowEpochMs()))
     }
 
-    suspend fun seedGraphDemoData() {
+    override suspend fun seedGraphDemoData() {
         val today = clockProvider.today()
         val baseEpoch = clockProvider.nowEpochMs()
         val demoWeights = listOf(
@@ -247,7 +237,7 @@ class BpRepository(
         date: LocalDate,
         transform: (DailyHealthRecord?, Long) -> DailyHealthRecord
     ) {
-        val now = System.currentTimeMillis()
+        val now = clockProvider.nowEpochMs()
         val current = dao.getRecord(date.toString())
         dao.upsertRecord(transform(current, now))
     }

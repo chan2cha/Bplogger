@@ -2,14 +2,16 @@
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -79,54 +81,57 @@ internal fun SettingsScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val compactText = isCompactTextMode()
                     SectionBadge(label = "SETTINGS")
                     Text("알림 설정", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PremiumInk)
-                    Text(
-                        "빠른 입력과 동일한 톤으로 알림 옵션을 관리합니다.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = PremiumSubtle
-                    )
+                    if (!compactText) {
+                        Text(
+                            "빠른 입력과 동일한 톤으로 알림 옵션을 관리합니다.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = PremiumSubtle
+                        )
+                    }
                 }
                 SettingRow(
                     label = "아침 알림 사용",
                     checked = morningEnabled,
                     onCheckedChange = { morningEnabled = it }
-                ) {
+                ) { fieldModifier ->
                     PremiumInputField(
                         value = morningTime,
                         onValueChange = { morningTime = it },
                         label = "아침",
                         suffix = "HH:mm",
                         keyboardType = KeyboardType.Text,
-                        modifier = Modifier.width(142.dp)
+                        modifier = fieldModifier
                     )
                 }
                 SettingRow(
                     label = "저녁 알림 사용",
                     checked = eveningEnabled,
                     onCheckedChange = { eveningEnabled = it }
-                ) {
+                ) { fieldModifier ->
                     PremiumInputField(
                         value = eveningTime,
                         onValueChange = { eveningTime = it },
                         label = "저녁",
                         suffix = "HH:mm",
                         keyboardType = KeyboardType.Text,
-                        modifier = Modifier.width(142.dp)
+                        modifier = fieldModifier
                     )
                 }
                 SettingRow(
                     label = "재알림 사용",
                     checked = repeatEnabled,
                     onCheckedChange = { repeatEnabled = it }
-                ) {
+                ) { fieldModifier ->
                     PremiumInputField(
                         value = repeatCount,
                         onValueChange = { repeatCount = it.filter(Char::isDigit) },
                         label = "재알림",
                         suffix = "회",
                         keyboardType = KeyboardType.Number,
-                        modifier = Modifier.width(142.dp)
+                        modifier = fieldModifier
                     )
                 }
                 Row(
@@ -177,7 +182,7 @@ private fun SettingsFooterActions(onClose: () -> Unit) {
                 onClick = onClose,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    .defaultMinSize(minHeight = 48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = WarmAccent)
             ) {
                 Text("메인으로")
@@ -229,33 +234,56 @@ private fun SettingRow(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable (Modifier) -> Unit
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = CardTint)) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp)
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(label, color = WarmAccent, fontWeight = FontWeight.SemiBold)
-                Switch(
-                    checked = checked,
-                    onCheckedChange = onCheckedChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = PremiumGlass,
-                        checkedTrackColor = WarmAccent,
-                        uncheckedThumbColor = PremiumSubtle,
-                        uncheckedTrackColor = CalendarGridLine
+            val compactText = isCompactTextMode()
+            val useStackedLayout = maxWidth < 520.dp || compactText
+            val toggleRow: @Composable (Modifier) -> Unit = { rowModifier ->
+                Row(
+                    modifier = rowModifier,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        label,
+                        modifier = Modifier.weight(1f),
+                        color = WarmAccent,
+                        fontWeight = FontWeight.SemiBold
                     )
-                )
+                    Switch(
+                        checked = checked,
+                        onCheckedChange = onCheckedChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = PremiumGlass,
+                            checkedTrackColor = WarmAccent,
+                            uncheckedThumbColor = PremiumSubtle,
+                            uncheckedTrackColor = CalendarGridLine
+                        )
+                    )
+                }
             }
-            content()
+
+            if (useStackedLayout) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    toggleRow(Modifier.fillMaxWidth())
+                    content(Modifier.widthIn(max = if (compactText) 160.dp else 220.dp))
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    toggleRow(Modifier.weight(1f))
+                    content(Modifier.width(142.dp))
+                }
+            }
         }
     }
 }

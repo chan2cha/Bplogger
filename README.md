@@ -49,6 +49,7 @@ Pulse Log는 Android용 혈압/체중 기록 앱입니다.
 - 입력 탭
   - 선택 날짜 요약
   - 빠른 입력 카드
+  - 입력란과 같은 행에 배치된 저장/삭제 아이콘 버튼
 - 캘린더 탭
   - 월력 카드
   - 월력 카드 상단 선택 날짜 요약
@@ -88,7 +89,7 @@ Pulse Log는 Android용 혈압/체중 기록 앱입니다.
 - `SettingsScreen.kt`
   - 헤더 톱니바퀴에서 열리는 설정 화면, 알림 설정, 디버그 테스트 데이터 액션
 - `ExportScreen.kt`
-  - 헤더 공유 아이콘에서 열리는 CSV 내보내기 화면
+  - 헤더 공유 아이콘에서 열리는 CSV/PDF 요약본 내보내기 화면
 - `BpViewModel.kt`
   - 화면 상태와 저장 액션
 - `BpRepository.kt`
@@ -96,7 +97,7 @@ Pulse Log는 Android용 혈압/체중 기록 앱입니다.
 - `domain/GraphPolicy.kt`
   - 그래프 날짜축과 차트 범위 계산
 - `domain/ExportPolicy.kt`
-  - CSV 파일명, 헤더, 행 포맷, PDF 요약 데이터 생성
+  - CSV 파일명, 헤더, 행 포맷, PDF 요약 데이터와 추이 포인트 생성
 - `domain/ClockProvider.kt`
   - 테스트 가능한 날짜/시간 의존성 경계
 
@@ -146,6 +147,7 @@ powershell.exe -ExecutionPolicy Bypass -File .\scripts\check.ps1
 - DB는 `fallbackToDestructiveMigration(dropAllTables = true)` 상태라 스키마 변경 시 기존 데이터 손실 가능
 - 날짜 메모와 상세 화면 코드는 남아 있으나 현재 UI에서는 사용하지 않음
 - 런처 앱명은 `Pulse Log`이며 하트 로고 기반 런처 아이콘을 사용
+- Play Store 등록용 아이콘과 Feature Graphic은 `docs/store-assets`에 생성됨
 - KSP 생성 소스 호환을 위해 `android.disallowKotlinSourceSets=false` 설정이 남아 있음
 - Play 내부 테스트용 패키지명은 `com.pulselog`로 정리됨
 
@@ -169,4 +171,5 @@ powershell.exe -ExecutionPolicy Bypass -File .\scripts\check.ps1
 - [정책 결정 기록](./docs/open-questions.md)
 - [하네스 엔지니어링 설계](./docs/harness-engineering-design.md)
 - [Play 내부 테스트 배포 절차](./docs/play-internal-test-release.md)
+- [Play Store 등록 정보](./docs/store-listing.md)
 - [개인정보처리방침](./docs/privacy-policy.md)

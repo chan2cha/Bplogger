@@ -7,13 +7,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Delete
@@ -91,6 +93,7 @@ internal fun QuickEntryCard(
     onDeleteWeight: () -> Unit
 ) {
     var pendingDeleteTarget by remember { mutableStateOf<PendingDeleteTarget?>(null) }
+    val compactText = isCompactTextMode()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -103,16 +106,22 @@ internal fun QuickEntryCard(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 SectionBadge(label = "QUICK ENTRY")
                 Text(
-                    text = "${selectedDate.month.getDisplayName(TextStyle.FULL, Locale.KOREAN)} ${selectedDate.dayOfMonth}일 입력",
+                    text = if (compactText) {
+                        "${selectedDate.month.getDisplayName(TextStyle.FULL, Locale.KOREAN)} ${selectedDate.dayOfMonth}일"
+                    } else {
+                        "${selectedDate.month.getDisplayName(TextStyle.FULL, Locale.KOREAN)} ${selectedDate.dayOfMonth}일 입력"
+                    },
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = PremiumInk
                 )
-                Text(
-                    text = "선택한 날짜 기준으로 바로 추가하거나 수정합니다.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = PremiumSubtle
-                )
+                if (!compactText) {
+                    Text(
+                        text = "선택한 날짜 기준으로 바로 추가하거나 수정합니다.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = PremiumSubtle
+                    )
+                }
             }
 
             QuickEntrySection(
@@ -221,50 +230,161 @@ private fun QuickEntrySection(
     canDelete: Boolean,
     saveLabel: String
 ) {
+    val compactText = isCompactTextMode()
+    val compactTitle = compactSectionTitle(title, compactText)
+
     Card(colors = CardDefaults.cardColors(containerColor = CardTint)) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(title, fontWeight = FontWeight.SemiBold, color = WarmAccent)
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PremiumInputField(
-                    value = primaryValue,
-                    onValueChange = onPrimaryChange,
-                    label = primaryLabel.take(1),
-                    keyboardType = KeyboardType.Number,
-                    modifier = Modifier.weight(1f)
-                )
-                PremiumInputField(
-                    value = secondaryValue,
-                    onValueChange = onSecondaryChange,
-                    label = secondaryLabel.take(1),
-                    keyboardType = KeyboardType.Number,
-                    modifier = Modifier.weight(1f)
-                )
-                IconActionButton(
-                    label = saveLabel,
-                    onClick = onSave
-                )
-                if (canDelete) {
-                    IconActionButton(
-                        label = "$title 삭제",
-                        onClick = onDelete,
-                        icon = Icons.Outlined.Delete,
-                        containerColor = PremiumSubtle
-                    )
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val useStackedControls = maxWidth < 480.dp || compactText
+
+                if (useStackedControls) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(compactTitle, fontWeight = FontWeight.SemiBold, color = WarmAccent)
+                            QuickEntryActions(
+                                saveLabel = saveLabel,
+                                onSave = onSave,
+                                deleteLabel = "$compactTitle 삭제",
+                                onDelete = onDelete,
+                                canDelete = canDelete
+                            )
+                        }
+                        BloodPressureInputPair(
+                            primaryValue = primaryValue,
+                            secondaryValue = secondaryValue,
+                            primaryLabel = primaryLabel,
+                            secondaryLabel = secondaryLabel,
+                            onPrimaryChange = onPrimaryChange,
+                            onSecondaryChange = onSecondaryChange,
+                            compact = compactText
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(compactTitle, fontWeight = FontWeight.SemiBold, color = WarmAccent)
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        PremiumInputField(
+                            value = primaryValue,
+                            onValueChange = onPrimaryChange,
+                            label = compactPressureLabel(primaryLabel, compactText),
+                            keyboardType = KeyboardType.Number,
+                            modifier = Modifier.weight(1f)
+                        )
+                        PremiumInputField(
+                            value = secondaryValue,
+                            onValueChange = onSecondaryChange,
+                            label = compactPressureLabel(secondaryLabel, compactText),
+                            keyboardType = KeyboardType.Number,
+                            modifier = Modifier.weight(1f)
+                        )
+                        QuickEntryActions(
+                            saveLabel = saveLabel,
+                            onSave = onSave,
+                            deleteLabel = "$compactTitle 삭제",
+                            onDelete = onDelete,
+                            canDelete = canDelete
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+private fun compactSectionTitle(title: String, compact: Boolean): String {
+    if (!compact) return title
+    return when (title) {
+        "아침 혈압" -> "아침"
+        "저녁 혈압" -> "저녁"
+        "체중" -> "kg"
+        else -> title
+    }
+}
+
+@Composable
+private fun BloodPressureInputPair(
+    primaryValue: String,
+    secondaryValue: String,
+    primaryLabel: String,
+    secondaryLabel: String,
+    onPrimaryChange: (String) -> Unit,
+    onSecondaryChange: (String) -> Unit,
+    compact: Boolean
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = if (compact) Modifier.widthIn(max = 220.dp) else Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PremiumInputField(
+            value = primaryValue,
+            onValueChange = onPrimaryChange,
+            label = compactPressureLabel(primaryLabel, compact),
+            keyboardType = KeyboardType.Number,
+            modifier = Modifier.weight(1f)
+        )
+        PremiumInputField(
+            value = secondaryValue,
+            onValueChange = onSecondaryChange,
+            label = compactPressureLabel(secondaryLabel, compact),
+            keyboardType = KeyboardType.Number,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+private fun compactPressureLabel(label: String, compact: Boolean): String {
+    if (!compact) return label.take(1)
+    return when (label) {
+        "수축기" -> "수"
+        "이완기" -> "이"
+        else -> label.take(1)
+    }
+}
+
+@Composable
+private fun QuickEntryActions(
+    saveLabel: String,
+    onSave: () -> Unit,
+    deleteLabel: String,
+    onDelete: () -> Unit,
+    canDelete: Boolean,
+    modifier: Modifier = Modifier,
+    horizontalAlignment: Alignment.Horizontal = Alignment.End
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp, horizontalAlignment),
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconActionButton(
+            label = saveLabel,
+            onClick = onSave
+        )
+        if (canDelete) {
+            IconActionButton(
+                label = deleteLabel,
+                onClick = onDelete,
+                icon = Icons.Outlined.Delete,
+                containerColor = PremiumSubtle
+            )
         }
     }
 }
@@ -280,42 +400,72 @@ private fun WeightQuickEntryRow(
     onSaveWeight: () -> Unit,
     onDeleteWeight: () -> Unit
 ) {
+    val compactText = isCompactTextMode()
+    val title = "체중"
+
     Card(colors = CardDefaults.cardColors(containerColor = CardTint)) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("체중", fontWeight = FontWeight.SemiBold, color = WarmAccent)
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PremiumInputField(
-                    value = weight,
-                    onValueChange = onWeightChange,
-                    label = "체중",
-                    suffix = "kg",
-                    keyboardType = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f)
-                )
-                IconActionButton(
-                    label = if (record?.weightKg == null) "체중 저장" else "체중 수정",
-                    onClick = onSaveWeight
-                )
-                if (record?.weightKg != null) {
-                    IconActionButton(
-                        label = "체중 삭제",
-                        onClick = onDeleteWeight,
-                        icon = Icons.Outlined.Delete,
-                        containerColor = PremiumSubtle
-                    )
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val useStackedControls = maxWidth < 480.dp || compactText
+                val saveLabel = if (record?.weightKg == null) "체중 저장" else "체중 수정"
+
+                if (useStackedControls) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(title, fontWeight = FontWeight.SemiBold, color = WarmAccent)
+                            QuickEntryActions(
+                                saveLabel = saveLabel,
+                                onSave = onSaveWeight,
+                                deleteLabel = "체중 삭제",
+                                onDelete = onDeleteWeight,
+                                canDelete = record?.weightKg != null
+                            )
+                        }
+                        PremiumInputField(
+                            value = weight,
+                            onValueChange = onWeightChange,
+                            label = "체중",
+                            suffix = if (compactText) null else "kg",
+                            keyboardType = KeyboardType.Decimal,
+                            modifier = Modifier.widthIn(max = 140.dp)
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(title, fontWeight = FontWeight.SemiBold, color = WarmAccent)
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        PremiumInputField(
+                            value = weight,
+                            onValueChange = onWeightChange,
+                            label = "체중",
+                            suffix = "kg",
+                            keyboardType = KeyboardType.Decimal,
+                            modifier = Modifier.weight(1f)
+                        )
+                        QuickEntryActions(
+                            saveLabel = saveLabel,
+                            onSave = onSaveWeight,
+                            deleteLabel = "체중 삭제",
+                            onDelete = onDeleteWeight,
+                            canDelete = record?.weightKg != null
+                        )
+                    }
                 }
             }
         }
@@ -356,7 +506,7 @@ internal fun PremiumInputField(
             cursorColor = WarmAccent
         ),
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = PremiumInk),
-        modifier = modifier.height(56.dp)
+        modifier = modifier.defaultMinSize(minHeight = 56.dp)
     )
 }
 
@@ -404,7 +554,7 @@ internal fun IconActionButton(
             }
         },
         modifier = Modifier
-            .size(38.dp)
+            .size(42.dp)
             .scale(buttonScale)
             .semantics { contentDescription = label },
         interactionSource = interactionSource,

@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.pulselog.BuildConfig
 import com.pulselog.data.GraphPoint
 import com.pulselog.data.NotificationSettings
+import com.pulselog.domain.ClockProvider
 import com.pulselog.domain.ExportRange
 import com.pulselog.domain.ExportSummary
-import java.math.BigDecimal
-import java.math.RoundingMode
+import com.pulselog.domain.HealthRepository
+import com.pulselog.domain.SystemClockProvider
+import com.pulselog.domain.ValidationPolicy
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,12 +21,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class BpViewModel(private val repo: BpRepository) : ViewModel() {
+class BpViewModel(
+    private val repo: HealthRepository,
+    clockProvider: ClockProvider = SystemClockProvider()
+) : ViewModel() {
 
-    private val _selectedDate = MutableStateFlow(LocalDate.now())
+    private val _selectedDate = MutableStateFlow(clockProvider.today())
     val selectedDate: StateFlow<LocalDate> = _selectedDate
 
-    private val _currentMonth = MutableStateFlow(YearMonth.now())
+    private val _currentMonth = MutableStateFlow(YearMonth.from(clockProvider.today()))
     val currentMonth: StateFlow<YearMonth> = _currentMonth
 
     private val _graphRangeDays = MutableStateFlow(7)
@@ -78,13 +83,15 @@ class BpViewModel(private val repo: BpRepository) : ViewModel() {
     }
 
     fun saveMorning(systolicInput: String, diastolicInput: String) {
-        val systolic = systolicInput.toIntOrNull()
-        val diastolic = diastolicInput.toIntOrNull()
-        if (systolic == null || diastolic == null) {
+        val rawSystolic = systolicInput.toIntOrNull()
+        val rawDiastolic = diastolicInput.toIntOrNull()
+        if (rawSystolic == null || rawDiastolic == null) {
             _message.value = "아침 혈압 값을 올바르게 입력하세요."
             return
         }
-        if (!isValidPressure(systolic) || !isValidPressure(diastolic)) {
+        val systolic = ValidationPolicy.parsePressure(systolicInput)
+        val diastolic = ValidationPolicy.parsePressure(diastolicInput)
+        if (systolic == null || diastolic == null) {
             _message.value = "혈압은 50부터 200 사이여야 합니다."
             return
         }
@@ -96,13 +103,15 @@ class BpViewModel(private val repo: BpRepository) : ViewModel() {
     }
 
     fun saveEvening(systolicInput: String, diastolicInput: String) {
-        val systolic = systolicInput.toIntOrNull()
-        val diastolic = diastolicInput.toIntOrNull()
-        if (systolic == null || diastolic == null) {
+        val rawSystolic = systolicInput.toIntOrNull()
+        val rawDiastolic = diastolicInput.toIntOrNull()
+        if (rawSystolic == null || rawDiastolic == null) {
             _message.value = "저녁 혈압 값을 올바르게 입력하세요."
             return
         }
-        if (!isValidPressure(systolic) || !isValidPressure(diastolic)) {
+        val systolic = ValidationPolicy.parsePressure(systolicInput)
+        val diastolic = ValidationPolicy.parsePressure(diastolicInput)
+        if (systolic == null || diastolic == null) {
             _message.value = "혈압은 50부터 200 사이여야 합니다."
             return
         }
@@ -114,19 +123,16 @@ class BpViewModel(private val repo: BpRepository) : ViewModel() {
     }
 
     fun saveWeight(weightInput: String) {
-        val parsed = weightInput.toDoubleOrNull()
-        if (parsed == null) {
+        val rawWeight = weightInput.toDoubleOrNull()
+        if (rawWeight == null) {
             _message.value = "체중 값을 올바르게 입력하세요."
             return
         }
-        if (parsed < 0.0 || parsed > 100.0) {
+        val rounded = ValidationPolicy.parseWeightKg(weightInput)
+        if (rounded == null) {
             _message.value = "체중은 0부터 100kg 사이여야 합니다."
             return
         }
-
-        val rounded = BigDecimal.valueOf(parsed)
-            .setScale(2, RoundingMode.HALF_UP)
-            .toDouble()
 
         viewModelScope.launch {
             repo.saveWeight(selectedDate.value, rounded)
@@ -177,13 +183,13 @@ class BpViewModel(private val repo: BpRepository) : ViewModel() {
         repeatEnabled: Boolean,
         repeatCountInput: String
     ) {
-        if (!isValidTime(morningTime) || !isValidTime(eveningTime)) {
+        if (!ValidationPolicy.isValidTime(morningTime) || !ValidationPolicy.isValidTime(eveningTime)) {
             _message.value = "알림 시간은 HH:mm 형식이어야 합니다."
             return
         }
 
-        val repeatCount = repeatCountInput.toIntOrNull()
-        if (repeatCount == null || repeatCount < 0 || repeatCount > 10) {
+        val repeatCount = ValidationPolicy.parseRepeatCount(repeatCountInput)
+        if (repeatCount == null) {
             _message.value = "재알림 횟수는 0부터 10 사이여야 합니다."
             return
         }
@@ -242,17 +248,7 @@ class BpViewModel(private val repo: BpRepository) : ViewModel() {
         }
     }
 
-    private fun isValidPressure(value: Int): Boolean = value in 50..200
-
     private fun alignDateToMonth(date: LocalDate, month: YearMonth): LocalDate {
         return month.atDay(date.dayOfMonth.coerceAtMost(month.lengthOfMonth()))
-    }
-
-    private fun isValidTime(value: String): Boolean {
-        val parts = value.split(":")
-        if (parts.size != 2) return false
-        val hour = parts[0].toIntOrNull() ?: return false
-        val minute = parts[1].toIntOrNull() ?: return false
-        return hour in 0..23 && minute in 0..59
     }
 }

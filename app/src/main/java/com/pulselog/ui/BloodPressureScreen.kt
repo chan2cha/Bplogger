@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -174,6 +175,8 @@ private fun MainSegmentedTabs(
     selectedTab: MainTab,
     onSelect: (MainTab) -> Unit
 ) {
+    val compactText = isCompactTextMode()
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,6 +188,7 @@ private fun MainSegmentedTabs(
         val tabCount = MainTab.entries.size
         val gap = 8.dp
         val indicatorWidth = ((maxWidth - gap * (tabCount - 1)) / tabCount).coerceAtLeast(0.dp)
+        val tabHeight = if (compactText) 48.dp else 52.dp
         val indicatorOffset by animateDpAsState(
             targetValue = ((indicatorWidth + gap) * selectedTab.ordinal).coerceAtLeast(0.dp),
             animationSpec = spring(
@@ -221,7 +225,7 @@ private fun MainSegmentedTabs(
                     shape = RoundedCornerShape(18.dp)
                 )
                 .align(Alignment.CenterStart)
-                .padding(vertical = 12.dp)
+                .height(tabHeight)
         )
 
         Row(
@@ -251,11 +255,11 @@ private fun MainSegmentedTabs(
                     modifier = Modifier
                         .weight(1f)
                         .softClickable(RoundedCornerShape(18.dp)) { onSelect(tab) }
-                        .padding(vertical = 12.dp),
+                        .height(tabHeight),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(if (compactText) 0.dp else 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -264,24 +268,30 @@ private fun MainSegmentedTabs(
                                 MainTab.CALENDAR -> Icons.Outlined.CalendarMonth
                                 MainTab.GRAPH -> Icons.Outlined.Insights
                             },
-                            contentDescription = null,
+                            contentDescription = when (tab) {
+                                MainTab.ENTRY -> "입력 탭"
+                                MainTab.CALENDAR -> "캘린더 탭"
+                                MainTab.GRAPH -> "그래프 탭"
+                            },
                             modifier = Modifier
-                                .size(18.dp)
+                                .size(if (compactText) 22.dp else 18.dp)
                                 .graphicsLayer {
                                     scaleX = iconScale
                                     scaleY = iconScale
                                 },
                             tint = iconTint
                         )
-                        Text(
-                            text = when (tab) {
-                                MainTab.ENTRY -> "입력"
-                                MainTab.CALENDAR -> "캘린더"
-                                MainTab.GRAPH -> "그래프"
-                            },
-                            color = textColor,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                        )
+                        if (!compactText) {
+                            Text(
+                                text = when (tab) {
+                                    MainTab.ENTRY -> "입력"
+                                    MainTab.CALENDAR -> "캘린더"
+                                    MainTab.GRAPH -> "그래프"
+                                },
+                                color = textColor,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }

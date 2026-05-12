@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -106,6 +108,7 @@ private fun SelectedDateSummaryHeader(
     onOpenEntry: () -> Unit
 ) {
     val status = record?.status() ?: DayRecordStatus.NONE
+    val compactText = isCompactTextMode()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -115,63 +118,13 @@ private fun SelectedDateSummaryHeader(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = "선택 날짜",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = PremiumSubtle,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = selectedDate.format(DateTimeFormatter.ofPattern("M월 d일 E요일", Locale.KOREAN)),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = PremiumInk,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .background(statusColor(status).copy(alpha = 0.12f), androidx.compose.foundation.shape.RoundedCornerShape(99.dp))
-                        .border(1.dp, statusColor(status).copy(alpha = 0.35f), androidx.compose.foundation.shape.RoundedCornerShape(99.dp))
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    StatusLegend(status = status)
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = statusText(status),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = PremiumInk,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+            SelectedDateTitleRow(
+                selectedDate = selectedDate,
+                status = status,
+                compact = compactText
+            )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                RecordSummaryTile(
-                    label = "아침 혈압",
-                    value = formatBloodPressure(record?.morningSystolic, record?.morningDiastolic),
-                    modifier = Modifier.weight(1f)
-                )
-                RecordSummaryTile(
-                    label = "저녁 혈압",
-                    value = formatBloodPressure(record?.eveningSystolic, record?.eveningDiastolic),
-                    modifier = Modifier.weight(1f)
-                )
-                RecordSummaryTile(
-                    label = "체중",
-                    value = record?.weightKg?.let { "${formatWeight(it)}kg" } ?: "기록 없음",
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            RecordSummaryTiles(record = record, compact = compactText)
 
             if (record != null) {
                 Text(
@@ -185,12 +138,120 @@ private fun SelectedDateSummaryHeader(
                 onClick = onOpenEntry,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp),
+                    .defaultMinSize(minHeight = 46.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = WarmAccent)
             ) {
-                Text("이 날짜 입력하기")
+                Text(if (compactText) "입력" else "이 날짜 입력하기")
             }
         }
+    }
+}
+
+@Composable
+private fun SelectedDateTitleRow(
+    selectedDate: LocalDate,
+    status: DayRecordStatus,
+    compact: Boolean
+) {
+    val titleBlock: @Composable () -> Unit = {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (!compact) {
+                Text(
+                    text = "선택 날짜",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = PremiumSubtle,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Text(
+                text = selectedDate.format(DateTimeFormatter.ofPattern(if (compact) "M/d E" else "M월 d일 E요일", Locale.KOREAN)),
+                style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                color = PremiumInk,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+    val statusBadge: @Composable () -> Unit = {
+        Row(
+            modifier = Modifier
+                .background(statusColor(status).copy(alpha = 0.12f), androidx.compose.foundation.shape.RoundedCornerShape(99.dp))
+                .border(1.dp, statusColor(status).copy(alpha = 0.35f), androidx.compose.foundation.shape.RoundedCornerShape(99.dp))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            StatusLegend(status = status)
+            if (!compact) {
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = statusText(status),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = PremiumInk,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+
+    if (compact) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            titleBlock()
+            statusBadge()
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            titleBlock()
+            statusBadge()
+        }
+    }
+}
+
+@Composable
+private fun RecordSummaryTiles(record: DailyHealthRecord?, compact: Boolean) {
+    val items = listOf(
+        "아침 혈압" to formatBloodPressure(record?.morningSystolic, record?.morningDiastolic),
+        "저녁 혈압" to formatBloodPressure(record?.eveningSystolic, record?.eveningDiastolic),
+        "체중" to (record?.weightKg?.let { "${formatWeight(it)}kg" } ?: "기록 없음")
+    )
+
+    if (compact) {
+        Column(
+            modifier = Modifier.widthIn(max = 260.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items.forEach { (label, value) ->
+                RecordSummaryTile(
+                    label = compactRecordLabel(label),
+                    value = value,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items.forEach { (label, value) ->
+                RecordSummaryTile(
+                    label = label,
+                    value = value,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+private fun compactRecordLabel(label: String): String {
+    return when (label) {
+        "아침 혈압" -> "아침"
+        "저녁 혈압" -> "저녁"
+        "체중" -> "kg"
+        else -> label
     }
 }
 
@@ -313,6 +374,7 @@ private fun CalendarGrid(
 ) {
     val cells = remember(month) { buildCalendarCells(month) }
     val weekdayLabels = listOf("월", "화", "수", "목", "금", "토", "일")
+    val compactText = isCompactTextMode()
 
     Column(
         modifier = Modifier
@@ -326,7 +388,9 @@ private fun CalendarGrid(
             weekdayLabels.forEachIndexed { index, label ->
                 Text(
                     text = label,
-                    modifier = Modifier.width(42.dp).wrapContentWidth(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .weight(1f)
+                        .wrapContentWidth(Alignment.CenterHorizontally),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
                     color = weekdayColor(index)
@@ -347,6 +411,8 @@ private fun CalendarGrid(
                         inCurrentMonth = date.month == month.month,
                         status = status,
                         isSelected = date == selectedDate,
+                        compact = compactText,
+                        modifier = Modifier.weight(1f),
                         onClick = { onDateClick(date) }
                     )
                 }
@@ -364,6 +430,8 @@ private fun CalendarDayCell(
     inCurrentMonth: Boolean,
     status: DayRecordStatus,
     isSelected: Boolean,
+    compact: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val isToday = date == LocalDate.now()
@@ -375,9 +443,8 @@ private fun CalendarDayCell(
     }
 
     Column(
-        modifier = Modifier
-            .width(42.dp)
-            .height(44.dp)
+        modifier = modifier
+            .defaultMinSize(minHeight = if (compact) 40.dp else 44.dp)
             .softClickable(androidx.compose.foundation.shape.RoundedCornerShape(14.dp), onClick = onClick)
             .semantics {
                 contentDescription = "${date.dayOfMonth}일 ${statusText(status)}"
@@ -387,7 +454,7 @@ private fun CalendarDayCell(
     ) {
         Box(
             modifier = Modifier
-                .size(32.dp)
+                .size(if (compact) 28.dp else 32.dp)
                 .background(
                     color = when {
                         isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
@@ -409,10 +476,10 @@ private fun CalendarDayCell(
         ) {
             Text(
                 text = date.dayOfMonth.toString(),
-                style = MaterialTheme.typography.bodyMedium,
+                style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
-            color = dayTextColor,
-            fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Medium
+                color = dayTextColor,
+                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Medium
             )
         }
 
