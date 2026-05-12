@@ -1,6 +1,7 @@
 ﻿package com.pulselog.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -72,17 +73,21 @@ internal fun GraphScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = PremiumPanel)
+                colors = CardDefaults.cardColors(containerColor = PremiumPanel),
+                border = BorderStroke(1.dp, CalendarGridLine.copy(alpha = 0.74f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = if (compactText) 2.dp else 0.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.padding(if (compactText) 14.dp else 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compactText) 10.dp else 12.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        SectionBadge(label = "GRAPH")
+                        if (!compactText) {
+                            SectionBadge(label = "GRAPH")
+                        }
                         Text(
-                            text = "건강 추이",
-                            style = MaterialTheme.typography.titleLarge,
+                            text = if (compactText) "추이" else "건강 추이",
+                            style = if (compactText) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = PremiumInk
                         )
@@ -112,7 +117,7 @@ internal fun GraphScreen(
 
         item {
             ChartCard(
-                title = "혈압 그래프",
+                title = if (compactText) "혈압" else "혈압 그래프",
                 subtitle = "수축기와 이완기의 최근 변화"
             ) {
                 if (systolicSeries.all { it == null } && diastolicSeries.all { it == null }) {
@@ -149,7 +154,7 @@ internal fun GraphScreen(
 
         item {
             ChartCard(
-                title = "체중 그래프",
+                title = if (compactText) "체중" else "체중 그래프",
                 subtitle = "최근 체중 기록 변화"
             ) {
                 if (weightSeries.all { it == null }) {
@@ -237,10 +242,22 @@ private fun ChartCard(title: String, subtitle: String, content: @Composable () -
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = CardTint)
+        colors = CardDefaults.cardColors(
+            containerColor = if (compactText) Color.White.copy(alpha = 0.95f) else CardTint
+        ),
+        border = BorderStroke(1.dp, if (compactText) CalendarGridLine.copy(alpha = 0.9f) else Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (compactText) 2.dp else 0.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = WarmAccent)
+        Column(
+            modifier = Modifier.padding(if (compactText) 14.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compactText) 12.dp else 10.dp)
+        ) {
+            Text(
+                title,
+                style = if (compactText) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = WarmAccent
+            )
             if (!compactText) {
                 Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = PremiumSubtle)
             }
@@ -296,13 +313,14 @@ private fun RangeChip(
                 shape = RoundedCornerShape(18.dp)
             )
             .softClickable(RoundedCornerShape(18.dp), onClick = onClick)
-            .defaultMinSize(minHeight = 42.dp)
-            .padding(horizontal = if (compactText) 12.dp else 14.dp, vertical = if (compactText) 8.dp else 10.dp)
+            .defaultMinSize(minHeight = if (compactText) 38.dp else 42.dp)
+            .padding(horizontal = if (compactText) 10.dp else 14.dp, vertical = if (compactText) 6.dp else 10.dp)
             ,
         contentAlignment = androidx.compose.ui.Alignment.Center
     ) {
         Text(
             text = label,
+            style = MaterialTheme.typography.labelLarge,
             color = if (selected) PremiumInk else PremiumSubtle,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
         )
@@ -561,7 +579,7 @@ private fun ChartSelectionSummary(
             colors = CardDefaults.cardColors(containerColor = PremiumGlass)
         ) {
             Text(
-                text = if (compactText) "탭해 값 확인" else "그래프를 탭해 날짜별 값을 확인하세요.",
+                text = if (compactText) "탭하여 값 확인" else "그래프를 탭해 날짜별 값을 확인하세요.",
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = PremiumSubtle

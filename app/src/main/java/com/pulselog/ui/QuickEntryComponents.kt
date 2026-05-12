@@ -3,6 +3,7 @@
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -97,21 +98,25 @@ internal fun QuickEntryCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = PremiumPanel)
+        colors = CardDefaults.cardColors(containerColor = PremiumPanel),
+        border = BorderStroke(1.dp, CalendarGridLine.copy(alpha = 0.74f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (compactText) 2.dp else 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(if (compactText) 14.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compactText) 14.dp else 12.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                SectionBadge(label = "QUICK ENTRY")
+                if (!compactText) {
+                    SectionBadge(label = "QUICK ENTRY")
+                }
                 Text(
                     text = if (compactText) {
-                        "${selectedDate.month.getDisplayName(TextStyle.FULL, Locale.KOREAN)} ${selectedDate.dayOfMonth}일"
+                        "${selectedDate.monthValue}/${selectedDate.dayOfMonth}"
                     } else {
                         "${selectedDate.month.getDisplayName(TextStyle.FULL, Locale.KOREAN)} ${selectedDate.dayOfMonth}일 입력"
                     },
-                    style = MaterialTheme.typography.titleLarge,
+                    style = if (compactText) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = PremiumInk
                 )
@@ -233,10 +238,16 @@ private fun QuickEntrySection(
     val compactText = isCompactTextMode()
     val compactTitle = compactSectionTitle(title, compactText)
 
-    Card(colors = CardDefaults.cardColors(containerColor = CardTint)) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (compactText) Color.White.copy(alpha = 0.95f) else CardTint
+        ),
+        border = BorderStroke(1.dp, if (compactText) CalendarGridLine.copy(alpha = 0.9f) else Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (compactText) 2.dp else 0.dp)
+    ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.padding(if (compactText) 10.dp else 12.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compactText) 8.dp else 6.dp)
         ) {
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val useStackedControls = maxWidth < 480.dp || compactText
@@ -248,7 +259,12 @@ private fun QuickEntrySection(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(compactTitle, fontWeight = FontWeight.SemiBold, color = WarmAccent)
+                            Text(
+                                compactTitle,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = WarmAccent
+                            )
                             QuickEntryActions(
                                 saveLabel = saveLabel,
                                 onSave = onSave,
@@ -336,14 +352,14 @@ private fun BloodPressureInputPair(
         PremiumInputField(
             value = primaryValue,
             onValueChange = onPrimaryChange,
-            label = compactPressureLabel(primaryLabel, compact),
+            label = if (compact) "" else compactPressureLabel(primaryLabel, compact),
             keyboardType = KeyboardType.Number,
             modifier = Modifier.weight(1f)
         )
         PremiumInputField(
             value = secondaryValue,
             onValueChange = onSecondaryChange,
-            label = compactPressureLabel(secondaryLabel, compact),
+            label = if (compact) "" else compactPressureLabel(secondaryLabel, compact),
             keyboardType = KeyboardType.Number,
             modifier = Modifier.weight(1f)
         )
@@ -403,10 +419,16 @@ private fun WeightQuickEntryRow(
     val compactText = isCompactTextMode()
     val title = "체중"
 
-    Card(colors = CardDefaults.cardColors(containerColor = CardTint)) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (compactText) Color.White.copy(alpha = 0.95f) else CardTint
+        ),
+        border = BorderStroke(1.dp, if (compactText) CalendarGridLine.copy(alpha = 0.9f) else Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (compactText) 2.dp else 0.dp)
+    ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.padding(if (compactText) 10.dp else 12.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compactText) 8.dp else 6.dp)
         ) {
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val useStackedControls = maxWidth < 480.dp || compactText
@@ -419,7 +441,12 @@ private fun WeightQuickEntryRow(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(title, fontWeight = FontWeight.SemiBold, color = WarmAccent)
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = WarmAccent
+                            )
                             QuickEntryActions(
                                 saveLabel = saveLabel,
                                 onSave = onSaveWeight,
@@ -431,7 +458,7 @@ private fun WeightQuickEntryRow(
                         PremiumInputField(
                             value = weight,
                             onValueChange = onWeightChange,
-                            label = "체중",
+                            label = if (compactText) "" else "체중",
                             suffix = if (compactText) null else "kg",
                             keyboardType = KeyboardType.Decimal,
                             modifier = Modifier.widthIn(max = 140.dp)
@@ -487,12 +514,12 @@ internal fun PremiumInputField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = {
+        label = if (label.isBlank()) null else ({
             Text(
                 text = if (suffix == null) label else "$label ($suffix)",
                 style = MaterialTheme.typography.labelMedium
             )
-        },
+        }),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = true,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
