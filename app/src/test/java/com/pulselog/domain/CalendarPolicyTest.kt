@@ -1,7 +1,6 @@
 package com.pulselog.domain
 
 import com.pulselog.data.DailyHealthRecord
-import com.pulselog.data.DailyNote
 import com.pulselog.data.DayRecordStatus
 import java.time.YearMonth
 import org.junit.Assert.assertEquals
@@ -15,8 +14,7 @@ class CalendarPolicyTest {
     fun buildMonthStatusesReturnsOneStatusPerDayInMonth() {
         val statuses = CalendarPolicy.buildMonthStatuses(
             month = YearMonth.parse("2026-02"),
-            records = emptyList(),
-            notes = emptyList()
+            records = emptyList()
         )
 
         assertEquals(28, statuses.size)
@@ -33,8 +31,7 @@ class CalendarPolicyTest {
                 record("2026-05-03", morningSystolic = 120),
                 record("2026-05-04", eveningSystolic = 130),
                 record("2026-05-05", morningSystolic = 121, eveningSystolic = 131, weightKg = 64.2)
-            ),
-            notes = emptyList()
+            )
         ).associateBy { it.dateIso }
 
         val morningOnly = requireNotNull(statuses["2026-05-03"])
@@ -55,30 +52,14 @@ class CalendarPolicyTest {
     }
 
     @Test
-    fun buildMonthStatusesMarksOnlyNonBlankNotes() {
+    fun buildMonthStatusesIgnoresRecordsOutsideMonth() {
         val statuses = CalendarPolicy.buildMonthStatuses(
             month = YearMonth.parse("2026-05"),
-            records = emptyList(),
-            notes = listOf(
-                note("2026-05-03", "check"),
-                note("2026-05-04", "   ")
-            )
-        ).associateBy { it.dateIso }
-
-        assertTrue(requireNotNull(statuses["2026-05-03"]).hasNote)
-        assertFalse(requireNotNull(statuses["2026-05-04"]).hasNote)
-    }
-
-    @Test
-    fun buildMonthStatusesIgnoresRecordsAndNotesOutsideMonth() {
-        val statuses = CalendarPolicy.buildMonthStatuses(
-            month = YearMonth.parse("2026-05"),
-            records = listOf(record("2026-04-30", morningSystolic = 120)),
-            notes = listOf(note("2026-06-01", "outside"))
+            records = listOf(record("2026-04-30", morningSystolic = 120))
         )
 
         assertEquals(31, statuses.size)
-        assertTrue(statuses.all { !it.hasMorningRecord && !it.hasNote })
+        assertTrue(statuses.all { !it.hasMorningRecord })
     }
 
     private fun record(
@@ -99,12 +80,4 @@ class CalendarPolicyTest {
         )
     }
 
-    private fun note(dateIso: String, note: String): DailyNote {
-        return DailyNote(
-            dateIso = dateIso,
-            note = note,
-            createdAtEpochMs = 1L,
-            updatedAtEpochMs = 1L
-        )
-    }
 }

@@ -44,6 +44,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -140,7 +141,11 @@ internal fun QuickEntryCard(
                 onSave = onSaveMorning,
                 onDelete = { pendingDeleteTarget = PendingDeleteTarget.MORNING },
                 canDelete = record?.morningSystolic != null,
-                saveLabel = if (record?.morningSystolic == null) "아침 저장" else "아침 수정"
+                saveLabel = if (record?.morningSystolic == null) "아침 저장" else "아침 수정",
+                primaryTestTag = "quick.morning.systolic",
+                secondaryTestTag = "quick.morning.diastolic",
+                saveTestTag = "quick.morning.save",
+                deleteTestTag = "quick.morning.delete"
             )
 
             QuickEntrySection(
@@ -154,7 +159,11 @@ internal fun QuickEntryCard(
                 onSave = onSaveEvening,
                 onDelete = { pendingDeleteTarget = PendingDeleteTarget.EVENING },
                 canDelete = record?.eveningSystolic != null,
-                saveLabel = if (record?.eveningSystolic == null) "저녁 저장" else "저녁 수정"
+                saveLabel = if (record?.eveningSystolic == null) "저녁 저장" else "저녁 수정",
+                primaryTestTag = "quick.evening.systolic",
+                secondaryTestTag = "quick.evening.diastolic",
+                saveTestTag = "quick.evening.save",
+                deleteTestTag = "quick.evening.delete"
             )
 
             WeightQuickEntryRow(
@@ -205,12 +214,18 @@ private fun DeleteConfirmDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag("quick.delete.confirm")
+            ) {
                 Text("삭제", color = Color(0xFFC44555), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("quick.delete.cancel")
+            ) {
                 Text("취소")
             }
         },
@@ -233,7 +248,11 @@ private fun QuickEntrySection(
     onSave: () -> Unit,
     onDelete: () -> Unit,
     canDelete: Boolean,
-    saveLabel: String
+    saveLabel: String,
+    primaryTestTag: String,
+    secondaryTestTag: String,
+    saveTestTag: String,
+    deleteTestTag: String
 ) {
     val compactText = isCompactTextMode()
     val compactTitle = compactSectionTitle(title, compactText)
@@ -270,7 +289,9 @@ private fun QuickEntrySection(
                                 onSave = onSave,
                                 deleteLabel = "$compactTitle 삭제",
                                 onDelete = onDelete,
-                                canDelete = canDelete
+                                canDelete = canDelete,
+                                saveTestTag = saveTestTag,
+                                deleteTestTag = deleteTestTag
                             )
                         }
                         BloodPressureInputPair(
@@ -280,7 +301,9 @@ private fun QuickEntrySection(
                             secondaryLabel = secondaryLabel,
                             onPrimaryChange = onPrimaryChange,
                             onSecondaryChange = onSecondaryChange,
-                            compact = compactText
+                            compact = compactText,
+                            primaryTestTag = primaryTestTag,
+                            secondaryTestTag = secondaryTestTag
                         )
                     }
                 } else {
@@ -301,21 +324,25 @@ private fun QuickEntrySection(
                             onValueChange = onPrimaryChange,
                             label = compactPressureLabel(primaryLabel, compactText),
                             keyboardType = KeyboardType.Number,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            testTag = primaryTestTag
                         )
                         PremiumInputField(
                             value = secondaryValue,
                             onValueChange = onSecondaryChange,
                             label = compactPressureLabel(secondaryLabel, compactText),
                             keyboardType = KeyboardType.Number,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            testTag = secondaryTestTag
                         )
                         QuickEntryActions(
                             saveLabel = saveLabel,
                             onSave = onSave,
                             deleteLabel = "$compactTitle 삭제",
                             onDelete = onDelete,
-                            canDelete = canDelete
+                            canDelete = canDelete,
+                            saveTestTag = saveTestTag,
+                            deleteTestTag = deleteTestTag
                         )
                     }
                 }
@@ -342,7 +369,9 @@ private fun BloodPressureInputPair(
     secondaryLabel: String,
     onPrimaryChange: (String) -> Unit,
     onSecondaryChange: (String) -> Unit,
-    compact: Boolean
+    compact: Boolean,
+    primaryTestTag: String,
+    secondaryTestTag: String
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -354,14 +383,16 @@ private fun BloodPressureInputPair(
             onValueChange = onPrimaryChange,
             label = if (compact) "" else compactPressureLabel(primaryLabel, compact),
             keyboardType = KeyboardType.Number,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            testTag = primaryTestTag
         )
         PremiumInputField(
             value = secondaryValue,
             onValueChange = onSecondaryChange,
             label = if (compact) "" else compactPressureLabel(secondaryLabel, compact),
             keyboardType = KeyboardType.Number,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            testTag = secondaryTestTag
         )
     }
 }
@@ -383,7 +414,9 @@ private fun QuickEntryActions(
     onDelete: () -> Unit,
     canDelete: Boolean,
     modifier: Modifier = Modifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.End
+    horizontalAlignment: Alignment.Horizontal = Alignment.End,
+    saveTestTag: String? = null,
+    deleteTestTag: String? = null
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp, horizontalAlignment),
@@ -392,14 +425,16 @@ private fun QuickEntryActions(
     ) {
         IconActionButton(
             label = saveLabel,
-            onClick = onSave
+            onClick = onSave,
+            testTag = saveTestTag
         )
         if (canDelete) {
             IconActionButton(
                 label = deleteLabel,
                 onClick = onDelete,
                 icon = Icons.Outlined.Delete,
-                containerColor = PremiumSubtle
+                containerColor = PremiumSubtle,
+                testTag = deleteTestTag
             )
         }
     }
@@ -452,7 +487,9 @@ private fun WeightQuickEntryRow(
                                 onSave = onSaveWeight,
                                 deleteLabel = "체중 삭제",
                                 onDelete = onDeleteWeight,
-                                canDelete = record?.weightKg != null
+                                canDelete = record?.weightKg != null,
+                                saveTestTag = "quick.weight.save",
+                                deleteTestTag = "quick.weight.delete"
                             )
                         }
                         PremiumInputField(
@@ -461,7 +498,8 @@ private fun WeightQuickEntryRow(
                             label = if (compactText) "" else "체중",
                             suffix = if (compactText) null else "kg",
                             keyboardType = KeyboardType.Decimal,
-                            modifier = Modifier.widthIn(max = 140.dp)
+                            modifier = Modifier.widthIn(max = 140.dp),
+                            testTag = "quick.weight.value"
                         )
                     }
                 } else {
@@ -483,14 +521,17 @@ private fun WeightQuickEntryRow(
                             label = "체중",
                             suffix = "kg",
                             keyboardType = KeyboardType.Decimal,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            testTag = "quick.weight.value"
                         )
                         QuickEntryActions(
                             saveLabel = saveLabel,
                             onSave = onSaveWeight,
                             deleteLabel = "체중 삭제",
                             onDelete = onDeleteWeight,
-                            canDelete = record?.weightKg != null
+                            canDelete = record?.weightKg != null,
+                            saveTestTag = "quick.weight.save",
+                            deleteTestTag = "quick.weight.delete"
                         )
                     }
                 }
@@ -509,7 +550,8 @@ internal fun PremiumInputField(
     label: String,
     keyboardType: KeyboardType,
     modifier: Modifier = Modifier,
-    suffix: String? = null
+    suffix: String? = null,
+    testTag: String? = null
 ) {
     OutlinedTextField(
         value = value,
@@ -533,7 +575,9 @@ internal fun PremiumInputField(
             cursorColor = WarmAccent
         ),
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = PremiumInk),
-        modifier = modifier.defaultMinSize(minHeight = 56.dp)
+        modifier = modifier
+            .then(if (testTag == null) Modifier else Modifier.testTag(testTag))
+            .defaultMinSize(minHeight = 56.dp)
     )
 }
 
@@ -545,7 +589,8 @@ internal fun IconActionButton(
     label: String,
     onClick: () -> Unit,
     icon: ImageVector = Icons.Outlined.Check,
-    containerColor: Color = WarmAccent
+    containerColor: Color = WarmAccent,
+    testTag: String? = null
 ) {
     val focusManager: FocusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
@@ -582,6 +627,7 @@ internal fun IconActionButton(
         },
         modifier = Modifier
             .size(42.dp)
+            .then(if (testTag == null) Modifier else Modifier.testTag(testTag))
             .scale(buttonScale)
             .semantics { contentDescription = label },
         interactionSource = interactionSource,

@@ -30,23 +30,14 @@ interface BpDao {
     @Query("DELETE FROM daily_health_records WHERE dateIso = :dateIso")
     suspend fun deleteRecord(dateIso: String)
 
-    @Query("SELECT * FROM daily_notes ORDER BY dateIso ASC")
-    fun observeAllNotes(): Flow<List<DailyNote>>
-
-    @Query("SELECT * FROM daily_notes WHERE dateIso = :dateIso")
-    fun observeNote(dateIso: String): Flow<DailyNote?>
-
-    @Query("SELECT * FROM daily_notes WHERE dateIso = :dateIso")
-    suspend fun getNote(dateIso: String): DailyNote?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertNote(note: DailyNote)
-
-    @Query("DELETE FROM daily_notes WHERE dateIso = :dateIso")
-    suspend fun deleteNote(dateIso: String)
+    @Query("DELETE FROM daily_health_records")
+    suspend fun deleteAllRecords()
 
     @Query("SELECT * FROM notification_settings WHERE id = 1")
     fun observeSettings(): Flow<NotificationSettings?>
+
+    @Query("SELECT * FROM notification_settings WHERE id = 1")
+    suspend fun getSettings(): NotificationSettings?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSettings(settings: NotificationSettings)

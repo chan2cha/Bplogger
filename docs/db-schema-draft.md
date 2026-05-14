@@ -1,4 +1,4 @@
-# Pulse Log DB 스키마 초안
+﻿# Pulse Log DB 스키마 초안
 
 ## 1. 목적
 
@@ -30,20 +30,7 @@
 - 항목 삭제 시 해당 항목 값과 측정 시간을 NULL로 만든다.
 - 모든 측정 항목이 비면 해당 날짜 row를 삭제한다.
 
-### 2.2 `daily_notes`
-
-- `date_iso TEXT PRIMARY KEY`
-- `note TEXT NOT NULL`
-- `created_at_epoch_ms INTEGER NOT NULL`
-- `updated_at_epoch_ms INTEGER NOT NULL`
-
-비고:
-
-- 현재 UI에서는 날짜 메모를 사용하지 않는다.
-- 기존 DB 스키마와 마이그레이션 리스크 때문에 테이블은 일단 유지한다.
-- 최종 제거 여부는 Room migration 전략 수립 후 결정한다.
-
-### 2.3 `notification_settings`
+### 2.2 `notification_settings`
 
 - `id INTEGER PRIMARY KEY`
 - `morning_enabled INTEGER NOT NULL`
@@ -87,12 +74,12 @@
 - 선택한 날짜에 row가 있으면 update 로 처리해야 한다.
 - 저장된 아침 혈압, 저녁 혈압, 체중은 항목별 삭제가 가능해야 한다.
 - CSV 내보내기는 빈 값을 0으로 대체하지 않아야 한다.
-- 날짜 메모는 현재 UI에서 사용하지 않는다.
+- 날짜 메모는 v3 -> v4 migration과 함께 제거한다.
 - UI는 빠른 입력 중심으로 바뀌어도 데이터 모델은 날짜 단위 레코드 구조를 유지한다.
 - 알림 설정은 현재 저장만 하고 있으며, 실제 스케줄링은 별도 계층에서 처리해야 한다.
 
 ## 5. 추가 보완 필요 사항
 
 - Room migration 스크립트 설계
-- 사용하지 않는 `daily_notes` 테이블의 유지/제거 방침 확정
+- v3 -> v4 `daily_notes` 제거 migration 유지
 - 알림 시간 형식 검증을 DB 저장 전 단계에서 강제할지 검토

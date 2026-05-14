@@ -29,7 +29,7 @@ Pulse Log는 Android용 혈압/체중 기록 앱입니다.
 - 그래프 선택 날짜를 캘린더 탭으로 연결
 - Material 터치 피드백을 앱 컬러 톤으로 통일
 - 디버그 빌드 그래프 더미 데이터 입력 액션
-- 알림 설정 저장 UI
+- 실제 OS 알림 스케줄링과 알림 설정 UI
 - 최근 30일 / 전체 기록 CSV 공유
 - 최근 30일 / 전체 기록 PDF 요약본 공유
 - 저장/수정/삭제 결과 스낵바 처리
@@ -62,8 +62,8 @@ Pulse Log는 Android용 혈압/체중 기록 앱입니다.
   - 선택 날짜 카드와 캘린더 이동 액션
 - 설정 화면
   - 아침/저녁 알림 사용 여부
-  - 알림 시간 입력
-  - 재알림 여부 / 횟수 입력
+  - 아침/저녁 범위에 맞춘 시간 선택
+  - 재알림 여부 / 횟수 스테퍼
   - 디버그 빌드 테스트 데이터 액션
 - 내보내기 화면
   - 헤더 공유 아이콘에서 진입
@@ -73,7 +73,9 @@ Pulse Log는 Android용 혈압/체중 기록 앱입니다.
 ## 코드 구조
 
 - `MainActivity.kt`
-  - DB / Repository / ViewModel 연결
+  - 앱 graph 생성과 알림 권한 요청 연결
+- `AppGraph.kt`
+  - DB / Repository / ViewModel / 알림 scheduler 연결
 - `BloodPressureScreen.kt`
   - 상단 헤더, 내보내기/설정 진입, 메인 탭 진입점
 - `EntryScreen.kt`
@@ -100,6 +102,14 @@ Pulse Log는 Android용 혈압/체중 기록 앱입니다.
   - CSV 파일명, 헤더, 행 포맷, PDF 요약 데이터와 추이 포인트 생성
 - `domain/ClockProvider.kt`
   - 테스트 가능한 날짜/시간 의존성 경계
+- `domain/NotificationScheduler.kt`
+  - 실제 OS 알림 스케줄링을 교체 가능한 경계로 분리
+- `domain/NotificationSchedulePolicy.kt`
+  - 다음 알림 시각과 재알림 시각 계산
+- `domain/NotificationReminderPolicy.kt`
+  - 이미 기록된 아침/저녁 알림 표시 생략 판단
+- `notifications/`
+  - `AlarmManager` 기반 알림 예약과 receiver
 
 ## 기술 스택
 
@@ -123,7 +133,7 @@ Pulse Log는 Android용 혈압/체중 기록 앱입니다.
 - 내보내기는 헤더 공유 아이콘에서 열고 최근 30일 또는 전체 기록을 CSV 원본 파일 또는 그래프 포함 PDF 요약본으로 생성한다.
 - 달력 상태는 `없음 / 아침만 / 저녁만 / 모두 기록` 4단계다.
 - 날짜 메모와 상세 화면은 현재 UI 흐름에서 사용하지 않는다.
-- 기존 `daily_notes` 테이블과 관련 코드는 마이그레이션 리스크를 줄이기 위해 일단 보존한다.
+- 기존 `daily_notes` 테이블과 관련 코드는 v3 -> v4 migration으로 제거한다.
 
 ## 실행 방법
 
@@ -141,11 +151,11 @@ powershell.exe -ExecutionPolicy Bypass -File .\scripts\check.ps1
 .\gradlew.bat assembleDebug
 ```
 
-## 현재 미구현 / 제한 사항
+## 현재 제한 사항
 
-- 실제 OS 알림 스케줄링은 아직 미구현
-- DB는 `fallbackToDestructiveMigration(dropAllTables = true)` 상태라 스키마 변경 시 기존 데이터 손실 가능
-- 날짜 메모와 상세 화면 코드는 남아 있으나 현재 UI에서는 사용하지 않음
+- 실제 알림은 기기 제조사 배터리 정책에 따라 지연될 수 있어 기기별 수동 검증이 필요함
+- v1/v2 Room schema artifact는 repository에 없어 v3 baseline 이후 migration을 보존하는 전략을 유지함
+- 날짜 메모와 상세 화면 코드는 제거됨
 - 런처 앱명은 `Pulse Log`이며 하트 로고 기반 런처 아이콘을 사용
 - Play Store 등록용 아이콘과 Feature Graphic은 `docs/store-assets`에 생성됨
 - KSP 생성 소스 호환을 위해 `android.disallowKotlinSourceSets=false` 설정이 남아 있음
@@ -153,11 +163,9 @@ powershell.exe -ExecutionPolicy Bypass -File .\scripts\check.ps1
 
 ## 추가 보완 필요 사항
 
-- Room 마이그레이션 전략 수립
-- 실제 알림 스케줄링 구현
-- 설정 시간 입력 UX 개선
-- ViewModel 테스트 추가
-- Compose UI 테스트 추가
+- 실제 기기 알림 동작 수동 검증
+- 날짜 변경 시 알림 상태 재계산 정책 강화
+- 병원별 제출 양식 고도화
 - 기기 회전과 프로세스 재생성 상태 복원 검증
 
 ## 관련 문서
@@ -171,5 +179,6 @@ powershell.exe -ExecutionPolicy Bypass -File .\scripts\check.ps1
 - [정책 결정 기록](./docs/open-questions.md)
 - [하네스 엔지니어링 설계](./docs/harness-engineering-design.md)
 - [Play 내부 테스트 배포 절차](./docs/play-internal-test-release.md)
+- [릴리즈 전 체크리스트](./docs/release-checklist.md)
 - [Play Store 등록 정보](./docs/store-listing.md)
 - [개인정보처리방침](./docs/privacy-policy.md)

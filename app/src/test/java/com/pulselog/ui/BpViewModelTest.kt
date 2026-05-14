@@ -1,21 +1,17 @@
 package com.pulselog.ui
 
-import com.pulselog.data.CalendarDayStatus
-import com.pulselog.data.DailyHealthRecord
-import com.pulselog.data.DailyNote
-import com.pulselog.data.GraphPoint
 import com.pulselog.data.NotificationSettings
-import com.pulselog.domain.ClockProvider
 import com.pulselog.domain.ExportRange
-import com.pulselog.domain.ExportSummary
-import com.pulselog.domain.HealthRepository
+import com.pulselog.test.FakeClockProvider
+import com.pulselog.test.FakeHealthRepository
+import com.pulselog.test.FakeNotificationScheduler
+import com.pulselog.test.SaveEveningCall
+import com.pulselog.test.SaveMorningCall
+import com.pulselog.test.SaveWeightCall
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -23,6 +19,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -83,6 +80,70 @@ class BpViewModelTest {
     }
 
     @Test
+    fun saveEvening_validInputDelegatesSelectedDateToRepository() = runTest {
+        val repo = FakeHealthRepository()
+        val viewModel = BpViewModel(
+            repo = repo,
+            clockProvider = FakeClockProvider(date = LocalDate.parse("2026-05-12"))
+        )
+        viewModel.setSelectedDate(LocalDate.parse("2026-05-11"))
+
+        viewModel.saveEvening("124", "82")
+        advanceUntilIdle()
+
+        assertEquals(
+            SaveEveningCall(LocalDate.parse("2026-05-11"), systolic = 124, diastolic = 82),
+            repo.saveEveningCalls.single()
+        )
+    }
+
+    @Test
+    fun saveWeight_validInputRoundsAndDelegatesSelectedDateToRepository() = runTest {
+        val repo = FakeHealthRepository()
+        val viewModel = BpViewModel(
+            repo = repo,
+            clockProvider = FakeClockProvider(date = LocalDate.parse("2026-05-12"))
+        )
+        viewModel.setSelectedDate(LocalDate.parse("2026-05-09"))
+
+        viewModel.saveWeight("65.555")
+        advanceUntilIdle()
+
+        assertEquals(
+            SaveWeightCall(LocalDate.parse("2026-05-09"), weightKg = 65.56),
+            repo.saveWeightCalls.single()
+        )
+    }
+
+    @Test
+    fun saveWeight_invalidInputDoesNotCallRepository() = runTest {
+        val repo = FakeHealthRepository()
+        val viewModel = BpViewModel(repo = repo)
+
+        viewModel.saveWeight("abc")
+        advanceUntilIdle()
+
+        assertEquals(emptyList<SaveWeightCall>(), repo.saveWeightCalls)
+    }
+
+    @Test
+    fun deleteMorningAndEveningDelegateSelectedDateToRepository() = runTest {
+        val repo = FakeHealthRepository()
+        val viewModel = BpViewModel(
+            repo = repo,
+            clockProvider = FakeClockProvider(date = LocalDate.parse("2026-05-12"))
+        )
+        viewModel.setSelectedDate(LocalDate.parse("2026-05-08"))
+
+        viewModel.deleteMorning()
+        viewModel.deleteEvening()
+        advanceUntilIdle()
+
+        assertEquals(listOf(LocalDate.parse("2026-05-08")), repo.deleteMorningCalls)
+        assertEquals(listOf(LocalDate.parse("2026-05-08")), repo.deleteEveningCalls)
+    }
+
+    @Test
     fun deleteWeightDelegatesSelectedDateAndShowsMessage() = runTest {
         val repo = FakeHealthRepository()
         val viewModel = BpViewModel(
@@ -98,84 +159,132 @@ class BpViewModelTest {
         assertEquals("체중을 삭제했습니다.", viewModel.message.value)
     }
 
-    private data class SaveMorningCall(
-        val date: LocalDate,
-        val systolic: Int,
-        val diastolic: Int
-    )
+    @Test
+    fun saveNotificationSettings_validInputSavesAndAppliesScheduler() = runTest {
+        val repo = FakeHealthRepository()
+        val scheduler = FakeNotificationScheduler()
+        val viewModel = BpViewModel(
+            repo = repo,
+            notificationScheduler = scheduler
+        )
 
-    private class FakeClockProvider(
-        private val date: LocalDate = LocalDate.parse("2026-05-12")
-    ) : ClockProvider {
-        override fun today(): LocalDate = date
-        override fun nowEpochMs(): Long = 1L
-        override fun zoneId(): ZoneId = ZoneId.of("Asia/Seoul")
+        viewModel.saveNotificationSettings(
+            morningEnabled = true,
+            morningTime = "08:00",
+            eveningEnabled = true,
+            eveningTime = "20:30",
+            repeatEnabled = true,
+            repeatCountInput = "3"
+        )
+        advanceUntilIdle()
+
+        val savedSettings = repo.savedNotificationSettings.single()
+        val expected = savedSettings.copy(
+            morningEnabled = true,
+            morningTime = "08:00",
+            eveningEnabled = true,
+            eveningTime = "20:30",
+            repeatEnabled = true,
+            repeatCount = 3
+        )
+        assertEquals(expected, savedSettings)
+        assertEquals(expected, scheduler.appliedSettings.single())
+        assertEquals("알림 설정을 저장했습니다.", viewModel.message.value)
     }
 
-    private class FakeHealthRepository : HealthRepository {
-        val saveMorningCalls = mutableListOf<SaveMorningCall>()
-        val deleteWeightCalls = mutableListOf<LocalDate>()
+    @Test
+    fun saveNotificationSettings_invalidTimeDoesNotSaveOrApplyScheduler() = runTest {
+        val repo = FakeHealthRepository()
+        val scheduler = FakeNotificationScheduler()
+        val viewModel = BpViewModel(
+            repo = repo,
+            notificationScheduler = scheduler
+        )
 
-        override fun observeRecord(date: LocalDate): Flow<DailyHealthRecord?> = MutableStateFlow(null)
+        viewModel.saveNotificationSettings(
+            morningEnabled = true,
+            morningTime = "8am",
+            eveningEnabled = true,
+            eveningTime = "20:30",
+            repeatEnabled = false,
+            repeatCountInput = "0"
+        )
+        advanceUntilIdle()
 
-        override fun observeNote(date: LocalDate): Flow<DailyNote?> = MutableStateFlow(null)
+        assertEquals(emptyList<NotificationSettings>(), repo.savedNotificationSettings)
+        assertEquals(emptyList<NotificationSettings>(), scheduler.appliedSettings)
+        assertEquals("알림 시간은 HH:mm 형식이어야 합니다.", viewModel.message.value)
+    }
 
-        override fun observeMonthStatuses(month: YearMonth): Flow<List<CalendarDayStatus>> {
-            return MutableStateFlow(emptyList())
+    @Test
+    fun exportCsv_emptyResultDoesNotInvokeReadyCallback() = runTest {
+        val repo = FakeHealthRepository().apply {
+            exportCsvResult = "empty.csv" to "date"
         }
+        val viewModel = BpViewModel(repo = repo)
+        var ready: Pair<String, String>? = null
 
-        override fun observeGraphPoints(days: Int): Flow<List<GraphPoint>> {
-            return MutableStateFlow(emptyList())
+        viewModel.exportCsv(ExportRange.RECENT_30_DAYS) { fileName, csv ->
+            ready = fileName to csv
         }
+        advanceUntilIdle()
 
-        override fun observeNotificationSettings(): Flow<NotificationSettings> {
-            return MutableStateFlow(NotificationSettings())
+        assertEquals(listOf(ExportRange.RECENT_30_DAYS), repo.exportCsvCalls)
+        assertNull(ready)
+    }
+
+    @Test
+    fun exportCsv_nonEmptyResultInvokesReadyCallback() = runTest {
+        val repo = FakeHealthRepository().apply {
+            exportCsvResult = "records.csv" to "date\n2026-05-12\n"
         }
+        val viewModel = BpViewModel(repo = repo)
+        var ready: Pair<String, String>? = null
 
-        override suspend fun exportCsv(range: ExportRange): Pair<String, String> = "test.csv" to ""
-
-        override suspend fun exportSummary(range: ExportRange): Pair<String, ExportSummary> {
-            return "test.pdf" to ExportSummary(
-                rangeLabel = range.label,
-                generatedDateIso = "2026-05-12",
-                startDateIso = null,
-                endDateIso = null,
-                totalRecordDays = 0,
-                morningCount = 0,
-                eveningCount = 0,
-                weightCount = 0,
-                averageMorningSystolic = null,
-                averageMorningDiastolic = null,
-                averageEveningSystolic = null,
-                averageEveningDiastolic = null,
-                averageWeightKg = null,
-                latestRows = emptyList(),
-                trendPoints = emptyList()
-            )
+        viewModel.exportCsv(ExportRange.ALL) { fileName, csv ->
+            ready = fileName to csv
         }
+        advanceUntilIdle()
 
-        override suspend fun saveMorning(date: LocalDate, systolic: Int, diastolic: Int) {
-            saveMorningCalls += SaveMorningCall(date, systolic, diastolic)
+        assertEquals(listOf(ExportRange.ALL), repo.exportCsvCalls)
+        assertEquals("records.csv" to "date\n2026-05-12\n", ready)
+    }
+
+    @Test
+    fun exportPdfSummary_emptySummaryDoesNotInvokeReadyCallback() = runTest {
+        val repo = FakeHealthRepository().apply {
+            exportSummaryResult = "empty.pdf" to FakeHealthRepository.emptyExportSummary()
         }
+        val viewModel = BpViewModel(repo = repo)
+        var readyFileName: String? = null
 
-        override suspend fun saveEvening(date: LocalDate, systolic: Int, diastolic: Int) = Unit
-
-        override suspend fun saveWeight(date: LocalDate, weightKg: Double) = Unit
-
-        override suspend fun deleteMorning(date: LocalDate) = Unit
-
-        override suspend fun deleteEvening(date: LocalDate) = Unit
-
-        override suspend fun deleteWeight(date: LocalDate) {
-            deleteWeightCalls += date
+        viewModel.exportPdfSummary(ExportRange.RECENT_30_DAYS) { fileName, _ ->
+            readyFileName = fileName
         }
+        advanceUntilIdle()
 
-        override suspend fun saveNote(date: LocalDate, note: String) = Unit
+        assertEquals(listOf(ExportRange.RECENT_30_DAYS), repo.exportSummaryCalls)
+        assertNull(readyFileName)
+    }
 
-        override suspend fun deleteNote(date: LocalDate) = Unit
+    @Test
+    fun exportPdfSummary_nonEmptySummaryInvokesReadyCallback() = runTest {
+        val summary = FakeHealthRepository.emptyExportSummary(ExportRange.ALL).copy(totalRecordDays = 1)
+        val repo = FakeHealthRepository().apply {
+            exportSummaryResult = "summary.pdf" to summary
+        }
+        val viewModel = BpViewModel(repo = repo)
+        var readyFileName: String? = null
+        var readyTotalRecordDays: Int? = null
 
-        override suspend fun saveNotificationSettings(settings: NotificationSettings) = Unit
+        viewModel.exportPdfSummary(ExportRange.ALL) { fileName, exportSummary ->
+            readyFileName = fileName
+            readyTotalRecordDays = exportSummary.totalRecordDays
+        }
+        advanceUntilIdle()
 
-        override suspend fun seedGraphDemoData() = Unit
+        assertEquals(listOf(ExportRange.ALL), repo.exportSummaryCalls)
+        assertEquals("summary.pdf", readyFileName)
+        assertEquals(1, readyTotalRecordDays)
     }
 }

@@ -25,32 +25,46 @@
 
 ## 2. 현재 남아 있는 문제
 
-### 2.1 알림 기능 미완성
+### 2.1 알림 기능 보완 필요
 
-- 설정 저장 UI는 있지만 실제 OS 알림 스케줄링은 아직 없다.
-- 현재는 알림 설정 화면이 로컬 설정 저장 화면이다.
+- `AlarmManager` 기반 실제 OS 알림 스케줄링은 추가됐다.
+- 설정 저장 시 아침/저녁 알림과 재알림이 예약된다.
+- 앱 업데이트/기기 재부팅 후 저장된 설정을 기준으로 재예약한다.
+- 이미 아침/저녁 기록이 있으면 해당 알림은 표시하지 않는다.
+- 남은 보완점은 실제 기기 알림 검증, 날짜 변경 시 상태 재계산, 시간 입력 UX다.
 
 ### 2.2 DB 마이그레이션 리스크
 
-- `fallbackToDestructiveMigration(dropAllTables = true)` 사용 중이다.
-- 스키마 변경 시 기존 데이터가 삭제될 수 있다.
-- 현재 UI에서 쓰지 않는 `daily_notes` 테이블이 남아 있다.
+- `fallbackToDestructiveMigration(dropAllTables = true)`는 제거됐다.
+- 현재 migration registry는 v3 baseline 이후 변경을 보존하는 기준으로 둔다.
+- v1/v2 schema artifact는 repository history에서 확인되지 않아 자동 복원 migration을 작성할 근거가 부족하다.
+- 현재 v4 Room schema export는 켜져 있고 `app/schemas`에 스냅샷을 보존한다.
+- DAO 저장/삭제/observe 동작은 in-memory Room androidTest로 검증한다.
+- v3 -> v4 migration은 `MigrationTestHelper`로 검증한다.
+- `daily_notes` 테이블은 v4 migration에서 제거됐다.
 
 ### 2.3 미사용 코드 정리 필요
 
-- `DayDetailScreen.kt`는 현재 사용자 흐름에서 사용하지 않는다.
-- `DailyNote`, note DAO, note Repository/ViewModel API는 DB 리스크 때문에 보존 중이다.
-- 최종 제거는 Room 마이그레이션 전략과 함께 처리해야 한다.
+- `DayDetailScreen.kt`는 제거됐다.
+- 메모 DAO와 Repository/ViewModel API는 제거됐다.
+- 관련 제거는 v3 -> v4 migration과 함께 검증했다.
 
-### 2.4 설정 입력 UX 부족
+### 2.4 설정 입력 UX
 
-- 시간 입력이 자유 텍스트라 오타가 나기 쉽다.
-- 재알림 횟수 입력 방식도 더 명확하게 만들 여지가 있다.
+- 시간 입력은 아침/저녁 범위를 반영한 선택 다이얼로그로 교체됐다.
+- 재알림 횟수는 텍스트 입력 대신 스테퍼로 조정한다.
+- 남은 보완점은 실제 기기에서 카드 구분, 시간 선택 다이얼로그, 스테퍼 조작감을 확인하는 것이다.
 
 ### 2.5 테스트 부족
 
-- 그래프 정책 테스트는 추가됐지만 ViewModel/UI 테스트는 아직 부족하다.
-- 캘린더/그래프 연결 흐름은 기기와 Compose UI 테스트가 필요하다.
+- 그래프 정책 테스트와 ViewModel/UI 테스트가 추가됐다.
+- 주요 Compose 컨트롤의 `testTag`와 smoke UI 테스트는 추가됐고 에뮬레이터 실행까지 확인했다.
+- 빠른 입력 아침/저녁 혈압과 체중 저장/삭제 UI 테스트는 추가됐다.
+- 그래프 선택 후 캘린더 이동 UI 테스트는 추가됐다.
+- ViewModel 테스트용 fake repository/clock/scheduler는 공용 테스트 fake로 분리됐다.
+- ViewModel의 아침/저녁 혈압, 체중 저장 및 삭제 repository 위임은 단위 테스트로 검증한다.
+- ViewModel의 CSV/PDF 내보내기 콜백과 빈 결과 차단은 단위 테스트로 검증한다.
+- 캘린더/그래프 연결 흐름은 connected Compose UI 테스트로 검증한다.
 
 ### 2.6 브랜딩 정리
 
@@ -60,7 +74,8 @@
 ### 2.7 Gradle/KSP 경고
 
 - KSP 생성 소스 호환을 위해 `android.disallowKotlinSourceSets=false` 설정이 남아 있다.
-- 빌드는 통과하지만 해당 옵션은 experimental 경고를 낸다.
+- 해당 플래그를 제거하면 AGP built-in Kotlin 설정에서 KSP 생성 소스 등록 오류가 발생한다.
+- KSP/AGP 조합을 올리거나 생성 소스 등록 방식을 바꾸기 전까지는 유지한다.
 
 ### 2.8 내보내기 확장
 
@@ -72,7 +87,7 @@
 - 화면 회전과 프로세스 재생성 시 상태 복원 검증이 충분하지 않다.
 - 실제 기기별 키보드 동작 차이를 더 확인해야 한다.
 - Compose 애니메이션 변경 시 레이아웃 깨짐이 다시 생길 수 있다.
-- 미사용 상세/메모 코드를 섣불리 제거하면 DB 마이그레이션 문제가 생길 수 있다.
+- 제거된 메모 테이블은 v3 -> v4 migration 테스트로 검증한다.
 - KSP/AGP/Kotlin 조합을 정리하지 않으면 Gradle 경고가 계속 남을 수 있다.
 - CSV/PDF 공유 파일에는 민감한 건강 기록이 포함되므로 공유 대상 앱 선택에 주의가 필요하다.
 
@@ -81,13 +96,12 @@
 높은 우선순위:
 
 - 실제 기기 안정화 검증
-- Room 마이그레이션 전략 수립
-- 실제 알림 스케줄링 구현
+- v4 이후 Room 마이그레이션 전략 유지
+- 실제 알림 동작 기기 검증
 - ViewModel/UI 테스트 추가
 - 병원별 제출 양식 고도화
 
 중간 우선순위:
 
-- 설정 시간 입력 UX 개선
+- 설정 화면 실제 기기 조작감 확인
 - 런처 이름과 앱 아이콘 정리
-- 미사용 상세/메모 코드 최종 정리

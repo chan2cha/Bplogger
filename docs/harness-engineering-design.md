@@ -30,14 +30,13 @@
 
 현재 구조는 기능 구현 중심이며, 자동 검증 중심 구조는 아니다.
 
-- `MainActivity`가 `Room`, `BpRepository`, `BpViewModel`을 직접 생성한다.
-- `BpRepository`가 구체 클래스라 fake 구현으로 교체하기 어렵다.
-- 일부 저장 로직과 UI 헬퍼가 `System.currentTimeMillis()`, `LocalDate.now()`, `ZoneId.systemDefault()`를 직접 사용한다.
-- 알림 스케줄링 계층이 아직 없어 설정 저장과 실제 알림 동작을 분리 검증할 수 없다.
-- 단위 테스트는 샘플 테스트만 있다.
-- Instrumented test도 패키지명 확인 샘플만 있다.
-- CI 또는 로컬 체크 스크립트가 없다.
-- Room `exportSchema = false`와 `fallbackToDestructiveMigration(dropAllTables = true)` 때문에 마이그레이션 하네스가 없다.
+- `AppGraph`가 `Room`, `BpRepository`, `BpViewModel`, `ClockProvider`, `NotificationScheduler` 조립을 담당한다.
+- `HealthRepository`, `ClockProvider`, `NotificationScheduler` 경계가 생겼고 ViewModel 테스트에서 fake로 교체 가능하다.
+- 주요 정책과 ViewModel 일부 흐름은 단위 테스트로 검증한다.
+- Compose UI smoke test와 빠른 입력 저장/삭제, 그래프 선택 후 캘린더 이동 테스트가 있다.
+- 로컬 체크 스크립트가 `test`, `lintDebug`, `assembleDebug`, `assembleDebugAndroidTest`를 실행한다.
+- Room `exportSchema = true`와 v4 schema snapshot은 추가됐고 destructive migration fallback은 제거됐다.
+- `AppDatabaseMigrations.ALL`이 production DB와 migration test에서 함께 쓰는 migration registry다.
 
 ## 3. 목표 아키텍처
 
@@ -144,7 +143,6 @@ class FakeClockProvider(
 ```kotlin
 interface HealthRepository {
     fun observeRecord(date: LocalDate): Flow<DailyHealthRecord?>
-    fun observeNote(date: LocalDate): Flow<DailyNote?>
     fun observeMonthStatuses(month: YearMonth): Flow<List<CalendarDayStatus>>
     fun observeGraphPoints(days: Int): Flow<List<GraphPoint>>
     fun observeNotificationSettings(): Flow<NotificationSettings>
@@ -155,8 +153,6 @@ interface HealthRepository {
     suspend fun deleteMorning(date: LocalDate)
     suspend fun deleteEvening(date: LocalDate)
     suspend fun deleteWeight(date: LocalDate)
-    suspend fun saveNote(date: LocalDate, note: String)
-    suspend fun deleteNote(date: LocalDate)
     suspend fun saveNotificationSettings(settings: NotificationSettings)
 }
 ```
@@ -166,7 +162,7 @@ interface HealthRepository {
 테스트 하네스:
 
 - `FakeHealthRepository`
-- 내부 상태는 `MutableStateFlow<Map<LocalDate, DailyHealthRecord>>`, `MutableStateFlow<Map<LocalDate, DailyNote>>`, `MutableStateFlow<NotificationSettings>`로 유지한다.
+- 내부 상태는 `MutableStateFlow<Map<LocalDate, DailyHealthRecord>>`, `MutableStateFlow<NotificationSettings>`로 유지한다.
 - 저장/삭제 호출 내역을 기록해 ViewModel 동작을 검증한다.
 
 ### 4.3 NotificationScheduler
@@ -244,7 +240,7 @@ object ValidationPolicy {
 
 - 6주 42칸 생성
 - 선택 날짜와 월 이동 시 날짜 보정
-- record + note에서 calendar status 생성
+- record에서 calendar status 생성
 
 테스트:
 
@@ -413,16 +409,17 @@ class AppGraph(context: Context) {
 
 현재 리스크:
 
-- `AppDatabase.version = 3`
-- `exportSchema = false`
-- `fallbackToDestructiveMigration(dropAllTables = true)` 사용
+- `AppDatabase.version = 4`
+- `exportSchema = true`
+- `app/schemas`에 version 3, 4 snapshot 보존
+- `fallbackToDestructiveMigration(dropAllTables = true)` 제거됨
+- v3 schema snapshot을 baseline으로 유지하고 v4에서 `daily_notes`를 제거
+- future migration은 `AppDatabaseMigrations.ALL`에 추가
 
 권장 변경:
 
-- `exportSchema = true`
-- `app/schemas` 경로를 git에 포함
-- `fallbackToDestructiveMigration(dropAllTables = true)` 제거
-- version 1 -> 2 -> 3 migration을 가능한 범위에서 복원하거나, 현 시점부터 version 3 기준 스냅샷을 고정한다.
+- version 1 -> 2 -> 3 migration은 schema artifact가 확보될 때만 복원한다.
+- 현 시점부터 version 3 기준 스냅샷을 baseline으로 고정하고 version 4 migration으로 메모 테이블 제거를 검증한다.
 
 테스트:
 
@@ -507,10 +504,14 @@ Android 기기 연결 시 추가:
 - `NotificationScheduler` 인터페이스 추가
 - `NoOpNotificationScheduler`, `FakeNotificationScheduler` 추가
 - 설정 저장 시 scheduler 호출
+- `AlarmManager` 기반 production scheduler 추가
+- 부팅/앱 업데이트 후 저장된 설정 재예약
+- 미기록 여부를 기준으로 알림 표시 여부를 판단하는 순수 정책 추가
 
 완료 조건:
 
 - 실제 OS 알림 구현 전에도 설정 저장과 스케줄링 계약을 테스트한다.
+- 실제 OS 알림 구현은 `NotificationSchedulePolicy` 단위 테스트와 로컬 체크로 최소 검증한다.
 
 ### Phase 4. UI 하네스
 
@@ -522,7 +523,7 @@ Android 기기 연결 시 추가:
 
 완료 조건:
 
-- 캘린더, 빠른 입력, 상세, 설정의 핵심 흐름을 자동으로 검증한다.
+- 캘린더, 빠른 입력, 그래프, 설정의 핵심 흐름을 자동으로 검증한다.
 
 ### Phase 5. DB 마이그레이션 하네스
 
@@ -562,4 +563,4 @@ Android 기기 연결 시 추가:
 7. Compose testTag 추가
 8. Room migration 하네스 추가
 
-이 순서가 좋은 이유는 알림, 마이그레이션, 미사용 상세/메모 코드 정리 같은 다음 기능 작업의 회귀 위험을 먼저 줄이기 때문이다.
+이 순서가 좋은 이유는 알림, 마이그레이션, 미사용 상세 코드 정리 같은 다음 기능 작업의 회귀 위험을 먼저 줄이기 때문이다.

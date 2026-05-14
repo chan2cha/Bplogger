@@ -3,7 +3,6 @@
 import com.pulselog.data.BpDao
 import com.pulselog.data.CalendarDayStatus
 import com.pulselog.data.DailyHealthRecord
-import com.pulselog.data.DailyNote
 import com.pulselog.data.GraphPoint
 import com.pulselog.data.NotificationSettings
 import com.pulselog.domain.CalendarPolicy
@@ -17,7 +16,6 @@ import com.pulselog.domain.SystemClockProvider
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 class BpRepository(
@@ -27,14 +25,11 @@ class BpRepository(
 
     override fun observeRecord(date: LocalDate): Flow<DailyHealthRecord?> = dao.observeRecord(date.toString())
 
-    override fun observeNote(date: LocalDate): Flow<DailyNote?> = dao.observeNote(date.toString())
-
     override fun observeMonthStatuses(month: YearMonth): Flow<List<CalendarDayStatus>> {
-        return combine(dao.observeAllRecords(), dao.observeAllNotes()) { records, notes ->
+        return dao.observeAllRecords().map { records ->
             CalendarPolicy.buildMonthStatuses(
                 month = month,
-                records = records,
-                notes = notes
+                records = records
             )
         }
     }
@@ -146,29 +141,6 @@ class BpRepository(
                 updatedAtEpochMs = clockProvider.nowEpochMs()
             )
         )
-    }
-
-    override suspend fun saveNote(date: LocalDate, note: String) {
-        val trimmed = note.trim()
-        if (trimmed.isBlank()) {
-            dao.deleteNote(date.toString())
-            return
-        }
-
-        val now = clockProvider.nowEpochMs()
-        val existing = dao.getNote(date.toString())
-        dao.upsertNote(
-            DailyNote(
-                dateIso = date.toString(),
-                note = trimmed,
-                createdAtEpochMs = existing?.createdAtEpochMs ?: now,
-                updatedAtEpochMs = now
-            )
-        )
-    }
-
-    override suspend fun deleteNote(date: LocalDate) {
-        dao.deleteNote(date.toString())
     }
 
     override suspend fun saveNotificationSettings(settings: NotificationSettings) {

@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -89,8 +90,16 @@ internal fun CompactCalendarCard(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    CalendarNavButton(onClick = onPrevious, isPrevious = true)
-                    CalendarNavButton(onClick = onNext, isPrevious = false)
+                    CalendarNavButton(
+                        onClick = onPrevious,
+                        isPrevious = true,
+                        testTag = "calendar.month.previous"
+                    )
+                    CalendarNavButton(
+                        onClick = onNext,
+                        isPrevious = false,
+                        testTag = "calendar.month.next"
+                    )
                 }
             }
 
@@ -158,6 +167,7 @@ private fun SelectedDateSummaryHeader(
                 onClick = onOpenEntry,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag("calendar.selected.open_entry")
                     .defaultMinSize(minHeight = 46.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = WarmAccent)
             ) {
@@ -363,10 +373,11 @@ private fun StatusLegend(status: DayRecordStatus) {
  * 월 이동 버튼.
  */
 @Composable
-private fun CalendarNavButton(onClick: () -> Unit, isPrevious: Boolean) {
+private fun CalendarNavButton(onClick: () -> Unit, isPrevious: Boolean, testTag: String) {
     Box(
         modifier = Modifier
             .size(36.dp)
+            .testTag(testTag)
             .background(PremiumGlass, androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
             .border(1.dp, CalendarGridLine, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
             .softClickable(androidx.compose.foundation.shape.RoundedCornerShape(12.dp), onClick = onClick),
@@ -522,6 +533,7 @@ private fun CalendarDayCell(
     Column(
         modifier = modifier
             .defaultMinSize(minHeight = 48.dp)
+            .testTag("calendar.day.$date")
             .softClickable(androidx.compose.foundation.shape.RoundedCornerShape(14.dp), onClick = onClick)
             .semantics {
                 contentDescription = "${date.dayOfMonth}일 ${statusText(status)}"
@@ -584,6 +596,7 @@ private fun CompactCalendarDayCell(
     Column(
         modifier = modifier
             .defaultMinSize(minHeight = 48.dp)
+            .testTag("calendar.day.$date")
             .background(
                 color = when {
                     isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.11f)

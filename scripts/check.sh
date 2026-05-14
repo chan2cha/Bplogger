@@ -7,6 +7,12 @@ export GRADLE_USER_HOME="$PWD/.gradle-user-home"
 if [[ -z "${ANDROID_HOME:-}" && -n "${LOCALAPPDATA:-}" && -d "$LOCALAPPDATA/Android/Sdk" ]]; then
   export ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"
 fi
+if [[ -z "${JAVA_HOME:-}" && -n "${PROGRAMFILES:-}" && -d "$PROGRAMFILES/Android/Android Studio/jbr" ]]; then
+  export JAVA_HOME="$PROGRAMFILES/Android/Android Studio/jbr"
+fi
+if [[ -n "${JAVA_HOME:-}" ]]; then
+  export PATH="$JAVA_HOME/bin:$PATH"
+fi
 
 step() {
   printf '\n==> %s\n' "$1"
@@ -43,5 +49,13 @@ step "Lint debug"
 
 step "Assemble debug"
 ./gradlew assembleDebug
+
+step "Assemble debug Android tests"
+./gradlew assembleDebugAndroidTest
+
+if [[ "${RUN_CONNECTED_TESTS:-}" == "1" ]]; then
+  step "Connected debug Android tests"
+  ./gradlew connectedDebugAndroidTest
+fi
 
 printf '\nAll local checks passed.\n'

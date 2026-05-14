@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.pulselog.domain.GraphPolicy
@@ -103,12 +104,14 @@ internal fun GraphScreen(
                         RangeChip(
                             label = if (compactText) "7일" else "최근 7일",
                             selected = rangeDays == 7,
-                            onClick = { vm.setGraphRangeDays(7) }
+                            onClick = { vm.setGraphRangeDays(7) },
+                            testTag = "graph.range.7"
                         )
                         RangeChip(
                             label = if (compactText) "30일" else "최근 30일",
                             selected = rangeDays == 30,
-                            onClick = { vm.setGraphRangeDays(30) }
+                            onClick = { vm.setGraphRangeDays(30) },
+                            testTag = "graph.range.30"
                         )
                     }
                 }
@@ -140,6 +143,7 @@ internal fun GraphScreen(
                             ChartReferenceLine(if (compactText) "수 120" else "수축기 120", 120.0, SystolicChartColor),
                             ChartReferenceLine(if (compactText) "이 80" else "이완기 80", 80.0, DiastolicChartColor)
                         ),
+                        chartTestTag = "graph.blood_pressure.chart",
                         onOpenCalendar = { dateIso ->
                             openCalendarForGraphDate(
                                 dateIso = dateIso,
@@ -173,6 +177,7 @@ internal fun GraphScreen(
                         seriesLabels = listOf("체중"),
                         valueSuffix = "kg",
                         colors = listOf(WeightChartColor),
+                        chartTestTag = "graph.weight.chart",
                         onOpenCalendar = { dateIso ->
                             openCalendarForGraphDate(
                                 dateIso = dateIso,
@@ -297,12 +302,14 @@ private fun ChartLegend(items: List<LegendEntry>) {
 private fun RangeChip(
     label: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    testTag: String
 ) {
     val compactText = isCompactTextMode()
 
     Box(
         modifier = Modifier
+            .testTag(testTag)
             .background(
                 color = if (selected) CardTint else PremiumGlass,
                 shape = RoundedCornerShape(18.dp)
@@ -340,6 +347,7 @@ private fun MultiLineChart(
     valueSuffix: String = "",
     colors: List<Color>,
     referenceLines: List<ChartReferenceLine> = emptyList(),
+    chartTestTag: String,
     onOpenCalendar: (String) -> Unit
 ) {
     val valueRange = GraphPolicy.valueRange(series + listOf(referenceLines.map { it.value }))
@@ -359,6 +367,7 @@ private fun MultiLineChart(
         modifier = Modifier
             .fillMaxWidth()
             .height(260.dp)
+            .testTag(chartTestTag)
             .background(PremiumGlass, RoundedCornerShape(16.dp))
             .border(1.dp, CalendarGridLine, RoundedCornerShape(16.dp))
             .padding(12.dp)
@@ -618,7 +627,10 @@ private fun ChartSelectionSummary(
                     )
                 }
                 if (selectedColumn.entries.isNotEmpty()) {
-                    TextButton(onClick = { onOpenCalendar(selectedColumn.dateIso) }) {
+                    TextButton(
+                        onClick = { onOpenCalendar(selectedColumn.dateIso) },
+                        modifier = Modifier.testTag("graph.selected.open_calendar")
+                    ) {
                         Text(if (compactText) "보기" else "캘린더에서 보기")
                     }
                 }

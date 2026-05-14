@@ -46,6 +46,8 @@ keyPassword=실제_비밀번호
 
 ## 4. release AAB 빌드
 
+빌드 전 `docs/release-checklist.md`의 자동 검증과 수동 검증 항목을 확인한다.
+
 PowerShell:
 
 ```powershell

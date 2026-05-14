@@ -2,11 +2,9 @@ package com.pulselog.ui
 
 import com.pulselog.data.BpDao
 import com.pulselog.data.DailyHealthRecord
-import com.pulselog.data.DailyNote
 import com.pulselog.data.NotificationSettings
-import com.pulselog.domain.ClockProvider
+import com.pulselog.test.FakeClockProvider
 import java.time.LocalDate
-import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -64,35 +62,20 @@ class BpRepositoryTest {
     }
 
     @Test
-    fun saveNoteAndSettings_useClockProviderForTimestamps() = runBlocking {
+    fun saveSettings_usesClockProviderForTimestamp() = runBlocking {
         val dao = FakeBpDao()
         val repo = BpRepository(
             dao = dao,
             clockProvider = FakeClockProvider(epochMs = 77L)
         )
 
-        repo.saveNote(LocalDate.parse("2026-05-12"), " memo ")
         repo.saveNotificationSettings(NotificationSettings(updatedAtEpochMs = 1L))
 
-        val note = requireNotNull(dao.getNote("2026-05-12"))
-        assertEquals("memo", note.note)
-        assertEquals(77L, note.createdAtEpochMs)
-        assertEquals(77L, note.updatedAtEpochMs)
         assertEquals(77L, dao.settings.value?.updatedAtEpochMs)
-    }
-
-    private class FakeClockProvider(
-        private val date: LocalDate = LocalDate.parse("2026-05-12"),
-        private val epochMs: Long
-    ) : ClockProvider {
-        override fun today(): LocalDate = date
-        override fun nowEpochMs(): Long = epochMs
-        override fun zoneId(): ZoneId = ZoneId.of("Asia/Seoul")
     }
 
     private class FakeBpDao : BpDao {
         private val records = MutableStateFlow<List<DailyHealthRecord>>(emptyList())
-        private val notes = MutableStateFlow<List<DailyNote>>(emptyList())
         val settings = MutableStateFlow<NotificationSettings?>(null)
 
         override fun observeAllRecords(): Flow<List<DailyHealthRecord>> = records
@@ -119,25 +102,13 @@ class BpRepositoryTest {
             records.value = records.value.filterNot { it.dateIso == dateIso }
         }
 
-        override fun observeAllNotes(): Flow<List<DailyNote>> = notes
-
-        override fun observeNote(dateIso: String): Flow<DailyNote?> {
-            return notes.map { items -> items.firstOrNull { it.dateIso == dateIso } }
-        }
-
-        override suspend fun getNote(dateIso: String): DailyNote? {
-            return notes.value.firstOrNull { it.dateIso == dateIso }
-        }
-
-        override suspend fun upsertNote(note: DailyNote) {
-            notes.value = notes.value.filterNot { it.dateIso == note.dateIso } + note
-        }
-
-        override suspend fun deleteNote(dateIso: String) {
-            notes.value = notes.value.filterNot { it.dateIso == dateIso }
+        override suspend fun deleteAllRecords() {
+            records.value = emptyList()
         }
 
         override fun observeSettings(): Flow<NotificationSettings?> = settings
+
+        override suspend fun getSettings(): NotificationSettings? = settings.value
 
         override suspend fun upsertSettings(settings: NotificationSettings) {
             this.settings.value = settings

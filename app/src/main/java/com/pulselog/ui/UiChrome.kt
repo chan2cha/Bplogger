@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -77,7 +78,10 @@ internal fun Header(
                 )
             }
         }
-        IconButton(onClick = onExportClick) {
+        IconButton(
+            onClick = onExportClick,
+            modifier = Modifier.testTag("main.header.export")
+        ) {
             Icon(
                 imageVector = if (exportActive) Icons.Outlined.Close else Icons.Outlined.IosShare,
                 contentDescription = if (exportActive) "내보내기 닫기" else "내보내기 열기",
@@ -85,7 +89,10 @@ internal fun Header(
                 tint = if (exportActive) WarmAccent else PremiumSubtle
             )
         }
-        IconButton(onClick = onSettingsClick) {
+        IconButton(
+            onClick = onSettingsClick,
+            modifier = Modifier.testTag("main.header.settings")
+        ) {
             Icon(
                 imageVector = if (settingsActive) Icons.Outlined.Close else Icons.Outlined.Settings,
                 contentDescription = if (settingsActive) "설정 닫기" else "설정 열기",

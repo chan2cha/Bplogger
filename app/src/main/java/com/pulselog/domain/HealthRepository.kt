@@ -2,7 +2,6 @@ package com.pulselog.domain
 
 import com.pulselog.data.CalendarDayStatus
 import com.pulselog.data.DailyHealthRecord
-import com.pulselog.data.DailyNote
 import com.pulselog.data.GraphPoint
 import com.pulselog.data.NotificationSettings
 import java.time.LocalDate
@@ -11,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface HealthRepository {
     fun observeRecord(date: LocalDate): Flow<DailyHealthRecord?>
-    fun observeNote(date: LocalDate): Flow<DailyNote?>
     fun observeMonthStatuses(month: YearMonth): Flow<List<CalendarDayStatus>>
     fun observeGraphPoints(days: Int): Flow<List<GraphPoint>>
     fun observeNotificationSettings(): Flow<NotificationSettings>
@@ -25,8 +23,6 @@ interface HealthRepository {
     suspend fun deleteMorning(date: LocalDate)
     suspend fun deleteEvening(date: LocalDate)
     suspend fun deleteWeight(date: LocalDate)
-    suspend fun saveNote(date: LocalDate, note: String)
-    suspend fun deleteNote(date: LocalDate)
     suspend fun saveNotificationSettings(settings: NotificationSettings)
 
     suspend fun seedGraphDemoData()

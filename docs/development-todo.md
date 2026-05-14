@@ -27,10 +27,18 @@
 
 ## 3. P1 - 알림 기능 완성
 
-- 알림 시간 입력 UX 개선
-- 아침/저녁 미기록 판정 로직 정리
-- `AlarmManager` 또는 `WorkManager` 기반 실제 스케줄링 구현
-- 날짜 변경 시 알림 상태 재계산
+- 현재 완료:
+  - `AlarmManager` 기반 아침/저녁 알림 예약
+  - 설정 저장 시 알림 재예약
+  - 앱 업데이트/기기 재부팅 후 저장된 설정 기준 재예약
+  - Android 13+ 알림 권한 요청
+  - 재알림 횟수 기준 10분 간격 추가 알림 예약
+  - 이미 아침/저녁 기록이 있으면 해당 알림 표시 생략
+  - 아침/저녁별 시간 범위를 반영한 직접 선택 다이얼로그 추가
+  - 재알림 횟수 텍스트 입력을 스테퍼로 교체
+
+- 추가 후보:
+  - 날짜 변경 시 알림 상태 재계산
 
 완료 조건:
 
@@ -39,10 +47,13 @@
 
 ## 4. P1 - 데이터 안정성
 
-- Room 마이그레이션 전략 수립
+- 현재 v4 Room schema export 스냅샷 유지
+- Room DAO in-memory androidTest 추가
+- Room v3 -> v4 migration test 추가
 - destructive migration 제거
+- v4 이후 schema 변경 시 `AppDatabaseMigrations.ALL`에 migration 추가
 - 기존 사용자 데이터 유지 시나리오 테스트
-- 현재 UI에서 사용하지 않는 `daily_notes` 테이블의 유지/제거 방침 확정
+- `daily_notes` 테이블 제거 및 v3 -> v4 drop migration 추가
 
 완료 조건:
 
@@ -52,11 +63,17 @@
 
 - ViewModel 저장/수정 테스트
 - ViewModel 삭제 테스트
+- ViewModel 테스트용 fake repository/clock/scheduler 분리
+- ViewModel 아침/저녁 혈압, 체중 저장 및 삭제 위임 테스트 확장
+- ViewModel CSV/PDF 내보내기 콜백 및 빈 결과 차단 테스트 추가
 - 날짜 상태 계산 테스트
 - 그래프 정책 테스트 확장
 - 설정 저장 테스트
-- Compose UI 테스트 태그 추가
-- 캘린더/그래프 이동 UI 테스트
+- Compose UI 테스트 태그 추가 진행 중
+- Compose UI smoke test 추가 및 에뮬레이터 실행 확인
+- 빠른 입력 아침 혈압 저장/삭제 UI 테스트 추가
+- 빠른 입력 저녁 혈압/체중 저장/삭제 UI 테스트 추가
+- 그래프 선택 후 캘린더 이동 UI 테스트 추가
 
 ## 6. P2 - 그래프 개선
 
@@ -114,3 +131,4 @@
 - 기능 변경 시 README와 docs 동시 업데이트
 - communication-bridge 기반 변경 기록 축적
 - 릴리즈 전 체크리스트 문서 추가
+- KSP/AGP 조합 업데이트 후 `android.disallowKotlinSourceSets=false` 제거 가능 여부 재검토

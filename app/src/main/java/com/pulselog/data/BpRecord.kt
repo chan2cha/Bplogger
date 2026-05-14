@@ -33,14 +33,6 @@ data class DailyHealthRecord(
     }
 }
 
-@Entity(tableName = "daily_notes")
-data class DailyNote(
-    @PrimaryKey val dateIso: String,
-    val note: String,
-    val createdAtEpochMs: Long,
-    val updatedAtEpochMs: Long
-)
-
 @Entity(tableName = "notification_settings")
 data class NotificationSettings(
     @PrimaryKey val id: Int = 1,
@@ -65,7 +57,6 @@ data class CalendarDayStatus(
     val hasMorningRecord: Boolean,
     val hasEveningRecord: Boolean,
     val hasWeight: Boolean,
-    val hasNote: Boolean,
     val status: DayRecordStatus
 )
 

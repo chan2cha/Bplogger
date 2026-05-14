@@ -1,0 +1,179 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "cd2bee20df0dec16e6dc13a608ad4c5d",
+    "entities": [
+      {
+        "tableName": "daily_health_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dateIso` TEXT NOT NULL, `morningSystolic` INTEGER, `morningDiastolic` INTEGER, `morningMeasuredAtEpochMs` INTEGER, `eveningSystolic` INTEGER, `eveningDiastolic` INTEGER, `eveningMeasuredAtEpochMs` INTEGER, `weightKg` REAL, `weightMeasuredAtEpochMs` INTEGER, `createdAtEpochMs` INTEGER NOT NULL, `updatedAtEpochMs` INTEGER NOT NULL, PRIMARY KEY(`dateIso`))",
+        "fields": [
+          {
+            "fieldPath": "dateIso",
+            "columnName": "dateIso",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "morningSystolic",
+            "columnName": "morningSystolic",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "morningDiastolic",
+            "columnName": "morningDiastolic",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "morningMeasuredAtEpochMs",
+            "columnName": "morningMeasuredAtEpochMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "eveningSystolic",
+            "columnName": "eveningSystolic",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "eveningDiastolic",
+            "columnName": "eveningDiastolic",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "eveningMeasuredAtEpochMs",
+            "columnName": "eveningMeasuredAtEpochMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "weightKg",
+            "columnName": "weightKg",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "weightMeasuredAtEpochMs",
+            "columnName": "weightMeasuredAtEpochMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAtEpochMs",
+            "columnName": "createdAtEpochMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMs",
+            "columnName": "updatedAtEpochMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "dateIso"
+          ]
+        }
+      },
+      {
+        "tableName": "daily_notes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dateIso` TEXT NOT NULL, `note` TEXT NOT NULL, `createdAtEpochMs` INTEGER NOT NULL, `updatedAtEpochMs` INTEGER NOT NULL, PRIMARY KEY(`dateIso`))",
+        "fields": [
+          {
+            "fieldPath": "dateIso",
+            "columnName": "dateIso",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtEpochMs",
+            "columnName": "createdAtEpochMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMs",
+            "columnName": "updatedAtEpochMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "dateIso"
+          ]
+        }
+      },
+      {
+        "tableName": "notification_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `morningEnabled` INTEGER NOT NULL, `morningTime` TEXT NOT NULL, `eveningEnabled` INTEGER NOT NULL, `eveningTime` TEXT NOT NULL, `repeatEnabled` INTEGER NOT NULL, `repeatCount` INTEGER NOT NULL, `updatedAtEpochMs` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "morningEnabled",
+            "columnName": "morningEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "morningTime",
+            "columnName": "morningTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eveningEnabled",
+            "columnName": "eveningEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eveningTime",
+            "columnName": "eveningTime",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "repeatEnabled",
+            "columnName": "repeatEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "repeatCount",
+            "columnName": "repeatCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMs",
+            "columnName": "updatedAtEpochMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cd2bee20df0dec16e6dc13a608ad4c5d')"
+    ]
+  }
+}

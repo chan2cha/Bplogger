@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -72,7 +73,10 @@ private enum class MainOverlay {
  * 상단 헤더와 탭 구조를 유지하고, 각 기능 화면은 별도 파일로 위임한다.
  */
 @Composable
-fun BloodPressureScreen(vm: BpViewModel) {
+fun BloodPressureScreen(
+    vm: BpViewModel,
+    onRequestNotificationPermission: () -> Unit = {}
+) {
     var selectedTab by remember { mutableStateOf(MainTab.ENTRY) }
     var activeOverlay by remember { mutableStateOf(MainOverlay.NONE) }
     val message by vm.message.collectAsState()
@@ -142,7 +146,8 @@ fun BloodPressureScreen(vm: BpViewModel) {
 
                         MainOverlay.SETTINGS -> SettingsScreen(
                             vm = vm,
-                            onClose = { activeOverlay = MainOverlay.NONE }
+                            onClose = { activeOverlay = MainOverlay.NONE },
+                            onRequestNotificationPermission = onRequestNotificationPermission
                         )
 
                         MainOverlay.NONE -> when (activeTab) {
@@ -254,6 +259,7 @@ private fun MainSegmentedTabs(
                 Box(
                     modifier = Modifier
                         .weight(1f)
+                        .testTag(tab.testTag())
                         .softClickable(RoundedCornerShape(18.dp)) { onSelect(tab) }
                         .height(tabHeight),
                     contentAlignment = Alignment.Center
@@ -296,5 +302,13 @@ private fun MainSegmentedTabs(
                 }
             }
         }
+    }
+}
+
+private fun MainTab.testTag(): String {
+    return when (this) {
+        MainTab.ENTRY -> "main.tab.entry"
+        MainTab.CALENDAR -> "main.tab.calendar"
+        MainTab.GRAPH -> "main.tab.graph"
     }
 }

@@ -25,6 +25,15 @@ if (-not $env:ANDROID_HOME) {
         $env:ANDROID_HOME = $defaultAndroidHome
     }
 }
+if (-not $env:JAVA_HOME) {
+    $defaultJavaHome = Join-Path $env:ProgramFiles "Android\Android Studio\jbr"
+    if (Test-Path $defaultJavaHome) {
+        $env:JAVA_HOME = $defaultJavaHome
+    }
+}
+if ($env:JAVA_HOME) {
+    $env:Path = (Join-Path $env:JAVA_HOME "bin") + [IO.Path]::PathSeparator + $env:Path
+}
 
 Invoke-Step "Environment" {
     if (-not $env:JAVA_HOME) {
@@ -57,6 +66,16 @@ Invoke-Step "Lint debug" {
 
 Invoke-Step "Assemble debug" {
     .\gradlew.bat assembleDebug
+}
+
+Invoke-Step "Assemble debug Android tests" {
+    .\gradlew.bat assembleDebugAndroidTest
+}
+
+if ($env:RUN_CONNECTED_TESTS -eq "1") {
+    Invoke-Step "Connected debug Android tests" {
+        .\gradlew.bat connectedDebugAndroidTest
+    }
 }
 
 Write-Host ""

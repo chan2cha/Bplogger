@@ -9,6 +9,8 @@ import com.pulselog.domain.ClockProvider
 import com.pulselog.domain.ExportRange
 import com.pulselog.domain.ExportSummary
 import com.pulselog.domain.HealthRepository
+import com.pulselog.domain.NoOpNotificationScheduler
+import com.pulselog.domain.NotificationScheduler
 import com.pulselog.domain.SystemClockProvider
 import com.pulselog.domain.ValidationPolicy
 import java.time.LocalDate
@@ -23,7 +25,8 @@ import kotlinx.coroutines.launch
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class BpViewModel(
     private val repo: HealthRepository,
-    clockProvider: ClockProvider = SystemClockProvider()
+    clockProvider: ClockProvider = SystemClockProvider(),
+    private val notificationScheduler: NotificationScheduler = NoOpNotificationScheduler()
 ) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow(clockProvider.today())
@@ -40,10 +43,6 @@ class BpViewModel(
 
     val selectedRecord = selectedDate
         .flatMapLatest { repo.observeRecord(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
-    val selectedNote = selectedDate
-        .flatMapLatest { repo.observeNote(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val monthStatuses = currentMonth
@@ -161,20 +160,6 @@ class BpViewModel(
         }
     }
 
-    fun saveNote(note: String) {
-        viewModelScope.launch {
-            repo.saveNote(selectedDate.value, note)
-            _message.value = if (note.isBlank()) "메모를 삭제했습니다." else "메모를 저장했습니다."
-        }
-    }
-
-    fun deleteNote() {
-        viewModelScope.launch {
-            repo.deleteNote(selectedDate.value)
-            _message.value = "메모를 삭제했습니다."
-        }
-    }
-
     fun saveNotificationSettings(
         morningEnabled: Boolean,
         morningTime: String,
@@ -195,16 +180,16 @@ class BpViewModel(
         }
 
         viewModelScope.launch {
-            repo.saveNotificationSettings(
-                NotificationSettings(
-                    morningEnabled = morningEnabled,
-                    morningTime = morningTime,
-                    eveningEnabled = eveningEnabled,
-                    eveningTime = eveningTime,
-                    repeatEnabled = repeatEnabled,
-                    repeatCount = repeatCount
-                )
+            val settings = NotificationSettings(
+                morningEnabled = morningEnabled,
+                morningTime = morningTime,
+                eveningEnabled = eveningEnabled,
+                eveningTime = eveningTime,
+                repeatEnabled = repeatEnabled,
+                repeatCount = repeatCount
             )
+            repo.saveNotificationSettings(settings)
+            notificationScheduler.apply(settings)
             _message.value = "알림 설정을 저장했습니다."
         }
     }
