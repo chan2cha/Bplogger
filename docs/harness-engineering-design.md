@@ -210,7 +210,6 @@ interface NotificationScheduler {
 - 체중 0.0..100.0
 - 체중 둘째 자리 반올림
 - 시간 `HH:mm`
-- 재알림 횟수 0..10
 
 권장 API:
 
@@ -219,7 +218,6 @@ object ValidationPolicy {
     fun parsePressure(value: String): Int?
     fun parseWeight(value: String): Double?
     fun parseTime(value: String): LocalTime?
-    fun parseRepeatCount(value: String): Int?
 }
 ```
 
@@ -350,7 +348,6 @@ quick.delete.confirm
 quick.delete.cancel
 settings.morning.time
 settings.evening.time
-settings.repeat.count
 settings.save
 ```
 

@@ -71,8 +71,7 @@
 - 헤더 우측 톱니바퀴에서 진입
 - 아침 알림 on/off와 시간 선택
 - 저녁 알림 on/off와 시간 선택
-- 재알림 on/off와 횟수 스테퍼
-- 아침, 저녁, 재알림, 저장을 독립 카드로 구분
+- 아침, 저녁, 저장을 독립 카드로 구분
 - 디버그 빌드에서 그래프 테스트 데이터 생성 액션
 
 ### 2.6 내보내기 화면
@@ -196,8 +195,8 @@
 - `morningTime: String`
 - `eveningEnabled: Boolean`
 - `eveningTime: String`
-- `repeatEnabled: Boolean`
-- `repeatCount: Int`
+- `repeatEnabled: Boolean`은 기존 DB 호환을 위해 유지하되 앱에서는 false로 저장
+- `repeatCount: Int`는 기존 DB 호환을 위해 유지하되 앱에서는 0으로 저장
 - `updatedAtEpochMs: Long`
 
 ## 10. 현재 설계상 남은 리스크

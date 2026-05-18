@@ -56,7 +56,6 @@ class BloodPressureScreenTest {
 
         composeRule.onNodeWithTag("settings.morning.time").assertIsDisplayed()
         composeRule.onNodeWithTag("settings.evening.time").assertIsDisplayed()
-        composeRule.onNodeWithTag("settings.repeat.count").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("settings.save").performScrollTo().assertIsDisplayed()
     }
 

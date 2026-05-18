@@ -38,20 +38,12 @@ class PulseLogNotificationReceiver : BroadcastReceiver() {
                     ACTION_REMINDER -> {
                         val slot = intent.getStringExtra(EXTRA_SLOT).orEmpty()
                         val repeatIndex = intent.getIntExtra(EXTRA_REPEAT_INDEX, 0)
+                        if (repeatIndex > 0) return@launch
+
                         if (NotificationReminderPolicy.shouldShowReminder(slot, state.todayRecord)) {
                             showReminder(context, slot)
-                            if (repeatIndex == 0) {
-                                scheduler.scheduleRepeatsFromNow(slot, state.settings)
-                            }
                         }
-                        if (repeatIndex == 0) {
-                            scheduler.scheduleNextBaseSlot(slot, state.settings)
-                        }
-                    }
-
-                    Intent.ACTION_BOOT_COMPLETED,
-                    Intent.ACTION_MY_PACKAGE_REPLACED -> {
-                        scheduler.apply(state.settings)
+                        scheduler.scheduleNextBaseSlot(slot, state.settings)
                     }
                 }
             } finally {

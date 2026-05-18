@@ -13,11 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -41,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.pulselog.BuildConfig
@@ -53,6 +48,7 @@ import com.pulselog.BuildConfig
 internal fun SettingsScreen(
     vm: BpViewModel,
     onClose: () -> Unit,
+    notificationsAllowed: Boolean = true,
     onRequestNotificationPermission: () -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
@@ -62,8 +58,6 @@ internal fun SettingsScreen(
     var morningTime by remember { mutableStateOf(settings.morningTime) }
     var eveningEnabled by remember { mutableStateOf(settings.eveningEnabled) }
     var eveningTime by remember { mutableStateOf(settings.eveningTime) }
-    var repeatEnabled by remember { mutableStateOf(settings.repeatEnabled) }
-    var repeatCount by remember { mutableStateOf(settings.repeatCount.toString()) }
     var timePickerTarget by remember { mutableStateOf<TimePickerTarget?>(null) }
 
     // 저장된 설정이 바뀌면 로컬 폼 상태도 즉시 맞춘다.
@@ -72,8 +66,6 @@ internal fun SettingsScreen(
         morningTime = settings.morningTime
         eveningEnabled = settings.eveningEnabled
         eveningTime = settings.eveningTime
-        repeatEnabled = settings.repeatEnabled
-        repeatCount = settings.repeatCount.toString()
     }
 
     Column(
@@ -116,30 +108,18 @@ internal fun SettingsScreen(
                 testTag = "settings.evening.time"
             )
         }
-        SettingRow(
-            label = "재알림",
-            description = "기록을 놓쳤을 때 10분 간격으로 다시 알려줍니다.",
-            checked = repeatEnabled,
-            onCheckedChange = { repeatEnabled = it }
-        ) { fieldModifier ->
-            RepeatCountStepper(
-                value = repeatCount.toIntOrNull() ?: 0,
-                enabled = repeatEnabled,
-                onValueChange = { repeatCount = it.toString() },
-                modifier = fieldModifier,
-                testTag = "settings.repeat.count"
-            )
-        }
-
         SettingsSaveCard {
-            onRequestNotificationPermission()
+            val notificationEnabled = morningEnabled || eveningEnabled
+            if (notificationEnabled && !notificationsAllowed) {
+                onRequestNotificationPermission()
+                vm.showNotificationPermissionRequired()
+                return@SettingsSaveCard
+            }
             vm.saveNotificationSettings(
                 morningEnabled = morningEnabled,
                 morningTime = morningTime,
                 eveningEnabled = eveningEnabled,
-                eveningTime = eveningTime,
-                repeatEnabled = repeatEnabled,
-                repeatCountInput = repeatCount
+                eveningTime = eveningTime
             )
         }
 
@@ -187,7 +167,7 @@ private fun SettingsHeader() {
         )
         if (!compactText) {
             Text(
-                "아침, 저녁, 재알림을 각각 카드에서 조정합니다.",
+                "아침과 저녁 기록 알림 시간을 조정합니다.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = PremiumSubtle
             )
@@ -359,46 +339,6 @@ private fun TimePickerChipSection(
                 onClick = { onSelected(value) }
             )
         }
-    }
-}
-
-@Composable
-private fun RepeatCountStepper(
-    value: Int,
-    enabled: Boolean,
-    onValueChange: (Int) -> Unit,
-    modifier: Modifier,
-    testTag: String
-) {
-    Row(
-        modifier = modifier.testTag(testTag),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconActionButton(
-            label = "재알림 줄이기",
-            icon = Icons.Outlined.Remove,
-            containerColor = if (enabled && value > 0) WarmAccent else PremiumSubtle,
-            onClick = {
-                if (enabled && value > 0) onValueChange(value - 1)
-            }
-        )
-        Text(
-            text = if (value == 0) "없음" else "${value}회",
-            modifier = Modifier.widthIn(min = 56.dp),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = if (enabled) PremiumInk else PremiumSubtle,
-            textAlign = TextAlign.Center
-        )
-        IconActionButton(
-            label = "재알림 늘리기",
-            icon = Icons.Outlined.Add,
-            containerColor = if (enabled && value < 10) WarmAccent else PremiumSubtle,
-            onClick = {
-                if (enabled && value < 10) onValueChange(value + 1)
-            }
-        )
     }
 }
 

@@ -75,6 +75,7 @@ private enum class MainOverlay {
 @Composable
 fun BloodPressureScreen(
     vm: BpViewModel,
+    notificationsAllowed: Boolean = true,
     onRequestNotificationPermission: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(MainTab.ENTRY) }
@@ -147,6 +148,7 @@ fun BloodPressureScreen(
                         MainOverlay.SETTINGS -> SettingsScreen(
                             vm = vm,
                             onClose = { activeOverlay = MainOverlay.NONE },
+                            notificationsAllowed = notificationsAllowed,
                             onRequestNotificationPermission = onRequestNotificationPermission
                         )
 

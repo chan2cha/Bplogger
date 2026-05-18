@@ -26,15 +26,6 @@ class NotificationSchedulePolicyTest {
         assertEquals(epochMs("2026-05-15T20:00:00"), trigger)
     }
 
-    @Test
-    fun repeatTriggerEpochMs_addsTenMinutesPerRepeat() {
-        val first = epochMs("2026-05-14T08:00:00")
-
-        val trigger = NotificationSchedulePolicy.repeatTriggerEpochMs(first, repeatIndex = 2)
-
-        assertEquals(epochMs("2026-05-14T08:20:00"), trigger)
-    }
-
     private fun epochMs(value: String): Long {
         return LocalDateTime.parse(value).atZone(zoneId).toInstant().toEpochMilli()
     }

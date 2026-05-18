@@ -29,7 +29,7 @@ class AlarmNotificationScheduler(
 
     override suspend fun cancelAll() {
         listOf(SLOT_MORNING, SLOT_EVENING).forEach { slot ->
-            for (repeatIndex in 0..MAX_REPEAT_COUNT) {
+            for (repeatIndex in 0..MAX_LEGACY_REPEAT_COUNT) {
                 alarmManager.cancel(pendingIntent(slot, repeatIndex))
             }
         }
@@ -39,22 +39,6 @@ class AlarmNotificationScheduler(
         when (slot) {
             SLOT_MORNING -> if (settings.morningEnabled) scheduleNextBaseSlot(slot, settings.morningTime)
             SLOT_EVENING -> if (settings.eveningEnabled) scheduleNextBaseSlot(slot, settings.eveningTime)
-        }
-    }
-
-    fun scheduleRepeatsFromNow(slot: String, settings: NotificationSettings) {
-        if (!settings.repeatEnabled) return
-
-        val repeatCount = settings.repeatCount.coerceAtMost(MAX_REPEAT_COUNT)
-        if (repeatCount <= 0) return
-
-        val now = clockProvider.nowEpochMs()
-        for (repeatIndex in 1..repeatCount) {
-            setAlarm(
-                slot = slot,
-                repeatIndex = repeatIndex,
-                triggerAtMillis = NotificationSchedulePolicy.repeatTriggerEpochMs(now, repeatIndex)
-            )
         }
     }
 
@@ -97,6 +81,6 @@ class AlarmNotificationScheduler(
     companion object {
         const val SLOT_MORNING = "morning"
         const val SLOT_EVENING = "evening"
-        const val MAX_REPEAT_COUNT = 10
+        private const val MAX_LEGACY_REPEAT_COUNT = 10
     }
 }

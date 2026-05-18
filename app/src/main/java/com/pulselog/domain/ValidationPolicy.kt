@@ -26,8 +26,4 @@ object ValidationPolicy {
         return hour in 0..23 && minute in 0..59
     }
 
-    fun parseRepeatCount(value: String): Int? {
-        val parsed = value.toIntOrNull() ?: return null
-        return parsed.takeIf { it in 0..10 }
-    }
 }

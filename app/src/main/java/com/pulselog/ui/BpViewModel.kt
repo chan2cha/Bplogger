@@ -81,6 +81,14 @@ class BpViewModel(
         _message.value = null
     }
 
+    fun showNotificationPermissionRequired() {
+        _message.value = "알림 권한을 허용한 뒤 다시 저장하세요."
+    }
+
+    fun showNotificationPermissionGranted() {
+        _message.value = "알림 권한이 허용되었습니다. 설정을 다시 저장하세요."
+    }
+
     fun saveMorning(systolicInput: String, diastolicInput: String) {
         val rawSystolic = systolicInput.toIntOrNull()
         val rawDiastolic = diastolicInput.toIntOrNull()
@@ -164,18 +172,10 @@ class BpViewModel(
         morningEnabled: Boolean,
         morningTime: String,
         eveningEnabled: Boolean,
-        eveningTime: String,
-        repeatEnabled: Boolean,
-        repeatCountInput: String
+        eveningTime: String
     ) {
         if (!ValidationPolicy.isValidTime(morningTime) || !ValidationPolicy.isValidTime(eveningTime)) {
             _message.value = "알림 시간은 HH:mm 형식이어야 합니다."
-            return
-        }
-
-        val repeatCount = ValidationPolicy.parseRepeatCount(repeatCountInput)
-        if (repeatCount == null) {
-            _message.value = "재알림 횟수는 0부터 10 사이여야 합니다."
             return
         }
 
@@ -185,8 +185,8 @@ class BpViewModel(
                 morningTime = morningTime,
                 eveningEnabled = eveningEnabled,
                 eveningTime = eveningTime,
-                repeatEnabled = repeatEnabled,
-                repeatCount = repeatCount
+                repeatEnabled = false,
+                repeatCount = 0
             )
             repo.saveNotificationSettings(settings)
             notificationScheduler.apply(settings)

@@ -52,16 +52,4 @@ class ValidationPolicyTest {
         assertFalse(ValidationPolicy.isValidTime("08-30"))
     }
 
-    @Test
-    fun parseRepeatCountAcceptsInclusiveRange() {
-        assertEquals(0, ValidationPolicy.parseRepeatCount("0"))
-        assertEquals(10, ValidationPolicy.parseRepeatCount("10"))
-    }
-
-    @Test
-    fun parseRepeatCountRejectsInvalidOrOutOfRangeValues() {
-        assertNull(ValidationPolicy.parseRepeatCount("-1"))
-        assertNull(ValidationPolicy.parseRepeatCount("11"))
-        assertNull(ValidationPolicy.parseRepeatCount("1.5"))
-    }
 }

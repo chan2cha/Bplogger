@@ -172,9 +172,7 @@ class BpViewModelTest {
             morningEnabled = true,
             morningTime = "08:00",
             eveningEnabled = true,
-            eveningTime = "20:30",
-            repeatEnabled = true,
-            repeatCountInput = "3"
+            eveningTime = "20:30"
         )
         advanceUntilIdle()
 
@@ -184,8 +182,8 @@ class BpViewModelTest {
             morningTime = "08:00",
             eveningEnabled = true,
             eveningTime = "20:30",
-            repeatEnabled = true,
-            repeatCount = 3
+            repeatEnabled = false,
+            repeatCount = 0
         )
         assertEquals(expected, savedSettings)
         assertEquals(expected, scheduler.appliedSettings.single())
@@ -205,9 +203,7 @@ class BpViewModelTest {
             morningEnabled = true,
             morningTime = "8am",
             eveningEnabled = true,
-            eveningTime = "20:30",
-            repeatEnabled = false,
-            repeatCountInput = "0"
+            eveningTime = "20:30"
         )
         advanceUntilIdle()
 
