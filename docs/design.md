@@ -205,3 +205,60 @@
 - 설정 화면 시간 입력은 선택 다이얼로그로 교체됐고, 저장 전 ViewModel 검증은 안전망으로 유지한다.
 - destructive migration fallback은 제거됐고 v3 -> v4 migration은 테스트로 검증한다.
 - 미사용 상세 화면 코드는 제거됐다.
+
+## 11. iOS 동등 설계
+
+iOS 앱은 Android 앱과 같은 사용자 경험을 목표로 하되 Android 배포 흐름에 영향을 주지 않는 Kotlin Multiplatform 공통 모듈을 사용한다.
+
+### 11.1 구현 원칙
+
+- Android Kotlin/Compose/Room 코드는 iOS 작업 범위에서 수정하지 않는다.
+- 모델, 정책, use case, repository 계약은 `shared` KMP 모듈로 이동한다.
+- iOS는 `shared` 모듈을 호출하는 SwiftUI 앱 또는 Compose Multiplatform 앱으로 구현한다.
+- 화면 순서, 정보 구조, 주요 문구, 색상 톤, 카드 구조는 Android 기준을 따른다.
+- 플랫폼 네이티브 차이는 허용하되 사용자 흐름은 동일하게 유지한다.
+- iOS DB와 Android Room DB의 파일 호환성은 첫 배포 목표가 아니다.
+
+### 11.2 iOS 화면 구조
+
+- 메인: 헤더, 내보내기, 설정, 입력/캘린더/그래프 전환
+- 입력: 선택 날짜 요약, 아침 혈압, 저녁 혈압, 체중, 저장/삭제, 삭제 확인
+- 캘린더: 월 이동, 날짜 상태, 선택 날짜 요약, 입력 이동
+- 그래프: 7일/30일 전환, 혈압 2라인, 체중 그래프, 선택 날짜 카드
+- 설정: 아침/저녁 알림 on/off와 시간 선택, 저장
+- 내보내기: 최근 30일/전체 CSV, 최근 30일/전체 PDF 요약본 공유
+
+### 11.3 iOS 디자인 동등성
+
+- 전체 톤은 Android와 같은 밝은 핑크/적색 계열을 사용한다.
+- iOS 컨트롤은 SwiftUI 네이티브 컨트롤을 사용하되 Android의 카드 분리, 아이콘 액션, 피드백 구조를 유지한다.
+- 저장/삭제/공유/설정 같은 명령은 아이콘과 접근성 라벨을 함께 제공한다.
+- 캘린더와 그래프의 색상 의미는 두 플랫폼에서 동일해야 한다.
+
+### 11.4 iOS 제외 범위
+
+- Android Room migration 공유
+- Android Play 배포 설정 변경
+- 재알림 사용/횟수 기능 재도입
+- 서버 동기화
+- Android와 iOS 간 자동 데이터 이전
+
+### 11.5 공통 코드 범위
+
+공유:
+
+- `DailyHealthRecord`, `NotificationSettings`, `CalendarDayStatus`, `GraphPoint`
+- 입력 검증 정책
+- 캘린더 상태 정책
+- 그래프 기간과 값 계산 정책
+- CSV/PDF 요약 데이터 정책
+- 알림 표시 생략 정책
+- repository 계약과 use case
+
+플랫폼별 유지:
+
+- Android Compose 화면과 iOS 화면 entry
+- Android Room entity와 migration
+- iOS 로컬 저장소 구현
+- Android `AlarmManager`와 iOS `UNUserNotificationCenter`
+- Android/iOS 공유 시트

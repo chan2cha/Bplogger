@@ -12,9 +12,12 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Preserve source line information so Play Console deobfuscation can show useful
+# stack traces when the release build is minified.
+-keepattributes SourceFile,LineNumberTable
+
+# Keep metadata that Retrofit, Kotlin coroutines, and JSON adapters may inspect.
+-keepattributes Signature,*Annotation*
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
